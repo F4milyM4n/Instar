@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Instar — dive planning, after action reviews and a staged training report card for developing divers.">
+<meta name="theme-color" content="#0b1a26">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Instar">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Instar — Diver Development</title>
+<style>
+:root{
+  --bg:#0b1a26; --panel:#11283a; --panel2:#163349; --line:#244a64;
+  --text:#e6f1f7; --muted:#8fb0c4; --accent:#3fc1c9; --accent2:#f5a524;
+  --ok:#3ccf8e; --bad:#ff6b6b; --warn:#f5a524;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{position:sticky;top:0;z-index:5;background:linear-gradient(#0b1a26,#0b1a26ee);border-bottom:1px solid var(--line)}
+.hwrap{max-width:980px;margin:0 auto;padding:10px 14px 0}
+h1{font-size:17px;margin:0 0 8px;letter-spacing:.3px}
+h1 span{color:var(--accent)}
+.tabs{display:flex;gap:4px}
+.tab{flex:1;background:none;border:0;color:var(--muted);padding:10px 8px;font-weight:600;font-size:15px;border-bottom:3px solid transparent;cursor:pointer}
+.tab.on{color:var(--text);border-bottom-color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:14px}
+.view{display:none}.view.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{font-size:15px;margin:0 0 10px;color:var(--accent)}
+.card h3{font-size:14px;margin:12px 0 6px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+select,input[type=number],input[type=text],textarea{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:15px}
+textarea{font-family:ui-monospace,Menlo,monospace;font-size:12px;min-height:90px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer}
+.seg button.on{background:var(--accent);color:#04202a;border-color:var(--accent);font-weight:700}
+.seg button small{display:block;font-size:11px;opacity:.8;font-weight:400}
+.out{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.big{background:var(--panel2);border-radius:12px;padding:14px;border:1px solid var(--line)}
+.big .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.big .v{font-size:34px;font-weight:800;line-height:1.1;margin-top:4px}
+.big .v small{font-size:15px;font-weight:600;color:var(--muted)}
+.big .s{font-size:13px;color:var(--muted);margin-top:4px}
+.big.rb .v{color:var(--accent2)}
+.big.five .v{color:var(--accent)}
+.math{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);white-space:pre-wrap;background:#0a1620;border-radius:8px;padding:10px;margin-top:8px;overflow-x:auto}
+.alert{border-left:4px solid var(--warn);background:#2a2412;padding:8px 10px;border-radius:6px;font-size:13px;margin-top:10px}
+.alert.bad{border-color:var(--bad);background:#2d1618}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:13px}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0}
+.chk input{width:18px;height:18px}
+.btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px;cursor:pointer}
+.btn.pri{background:var(--accent);color:#04202a;border-color:var(--accent);font-weight:700}
+.btn.ok{border-color:var(--ok);color:var(--ok)}
+.btn.bad{border-color:var(--bad);color:var(--bad)}
+.btn.sm{padding:3px 8px;font-size:12px}
+/* training */
+.stages{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-bottom:12px}
+.st{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;text-align:left;color:var(--text)}
+.st.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.st .n{font-size:11px;color:var(--muted)}
+.st .t{font-size:13px;font-weight:600}
+.bar{height:5px;background:#0a1620;border-radius:3px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.pill{display:inline-block;font-size:11px;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.pill.ok{color:var(--ok);border-color:var(--ok)}
+.pill.warn{color:var(--warn);border-color:var(--warn)}
+.pill.lock{color:var(--bad);border-color:var(--bad)}
+.pr{border-top:1px solid var(--line);padding:10px 0}
+.pr:first-of-type{border-top:0}
+.pr h4{margin:0 0 6px;font-size:13px;color:var(--accent2);text-transform:uppercase;letter-spacing:.5px}
+.drill{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:4px 0;font-size:14px}
+.drill .c{display:flex;gap:4px;align-items:center;white-space:nowrap}
+.drill .c b{min-width:22px;text-align:center}
+.gate{background:var(--panel2);border-radius:8px;padding:10px;margin-top:6px}
+.gate p{margin:0 0 8px;font-size:14px}
+.att{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.att span{font-size:11px;padding:2px 6px;border-radius:6px;background:#0a1620;cursor:pointer}
+.att span.p{color:var(--ok)} .att span.f{color:var(--bad)}
+.lim{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+table.ck,table.gt{border-collapse:collapse;width:100%;font-size:14px}
+table.ck th,table.gt th{font-size:12px;color:var(--muted);text-align:center;padding:4px 6px;font-weight:600}
+table.ck td,table.gt td{border-top:1px solid var(--line);padding:6px}
+table.ck td:not(:first-child){text-align:center;width:64px}
+table.ck input{width:20px;height:20px}
+table.gt td:not(:first-child){text-align:center;font-weight:700;font-size:16px}
+table.gt td:first-child{color:var(--muted);font-size:13px}
+table.gt tr.hl td:not(:first-child){color:var(--accent2)}
+table.gt tr.hl2 td:not(:first-child){color:var(--accent)}
+.chip{display:inline-flex;gap:6px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:13px;color:var(--text);text-transform:none;letter-spacing:0;margin:0;cursor:pointer}
+.chip input{width:16px;height:16px;margin:0}
+table.ds{border-collapse:collapse;width:100%;font-size:14px}
+table.ds th{font-size:12px;color:var(--muted);text-align:left;padding:4px 6px}
+table.ds td{border-top:1px solid var(--line);padding:5px 6px}
+table.ds tr.sw td{color:var(--accent)}
+.rc{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;font-size:14px;text-transform:none;letter-spacing:0;color:var(--text);margin:0;border-bottom:1px dashed #1e3d52}
+.rc input[type=checkbox]{width:18px;height:18px;flex:none}
+.tag{background:none;border:1px solid var(--line);color:var(--muted);font-size:10px;padding:2px 5px;border-radius:5px;cursor:pointer;flex:none}
+select.gsel{width:auto;padding:5px 6px;font-size:13px}
+select.gsel.g1{border-color:var(--warn);color:var(--warn)}
+select.gsel.g2{border-color:var(--accent);color:var(--accent)}
+select.gsel.g3{border-color:var(--ok);color:var(--ok)}
+.out.three{grid-template-columns:repeat(3,1fr);gap:6px}
+.out.three .big{padding:8px}
+.out.three .v{font-size:24px}
+.out.three .k{font-size:10px;letter-spacing:.3px}
+.out.three .s{font-size:11px}
+textarea.aar{font-family:inherit;font-size:14px;min-height:0}
+.incs{display:flex;flex-wrap:wrap;gap:6px}
+details.std{margin-top:3px;font-size:11.5px;color:var(--muted)}
+details.std summary{color:var(--accent);cursor:pointer;list-style:none}
+details.std summary::-webkit-details-marker{display:none}
+details.std>div{margin-top:4px;padding-left:8px;border-left:2px solid var(--line)}
+details.std>div>div{margin:2px 0}
+details.std .met{color:var(--ok)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:16px}
+.sheet[hidden],.toast[hidden],#installBtn[hidden]{display:none}
+.sheet-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;max-width:440px;width:100%}
+.sheet-card ol{padding-left:20px;margin:8px 0}.sheet-card li{margin:6px 0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:21;background:var(--panel2);border:1px solid var(--accent);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:center;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.foot{font-size:12px;color:var(--muted);text-align:center;padding:20px 0 30px}
+</style>
+</head>
+<body>
+<header><div class="hwrap">
+  <div class="row" style="justify-content:space-between;flex-wrap:nowrap;margin-bottom:8px">
+    <h1 style="margin:0;display:flex;align-items:center;gap:8px"><img src="icons/icon-192.png" alt="" width="28" height="28" style="border-radius:7px"><span>Instar</span> <small style="font-weight:400;color:var(--muted);font-size:12px">diver development</small></h1>
+    <button class="btn sm pri" id="installBtn" hidden>Install app</button>
+  </div>
+  <nav class="tabs">
+    <button class="tab on" data-tab="plan">Dive Plan</button>
+    <button class="tab" data-tab="log">Dive Log</button>
+    <button class="tab" data-tab="train">Training</button>
+  </nav>
+</div></header>
+
+<main>
+<!-- ================= PLAN ================= -->
+<section id="v-plan" class="view on">
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">Dive plan</h2>
+      <div class="row">
+        <button class="btn sm" id="pNew">New plan</button>
+        <button class="btn sm" id="pSave">Save plan</button>
+        <button class="btn sm pri" id="pLog">Log this dive</button>
+      </div>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <div><label>Date</label><input type="text" data-k="date" placeholder="YYYY-MM-DD"></div>
+      <div><label>Site</label><input type="text" data-k="site"></div>
+      <div style="grid-column:1/-1" id="pSiteNotes"></div>
+      <div><label>Instar</label><select data-k="stage" id="pStage"></select></div>
+      <div><label>Venue</label><select data-k="venue">
+        <option value="land">Land / dry run</option><option value="pool">Pool</option><option value="confined">Confined open water (≤20 ft)</option>
+        <option value="open">Open water</option><option value="overhead">Overhead site</option></select></div>
+      <div style="grid-column:1/-1" id="pObjBox"></div>
+      <div style="grid-column:1/-1"><label>Goal / notes</label><input type="text" data-k="objective" placeholder="Anything else for this dive"></div>
+    </div>
+    <div class="row" style="margin-top:12px;gap:6px" id="pAdv">
+      <span class="muted">Advanced:</span>
+      <label class="chip"><input type="checkbox" data-adv="tmx"> Trimix</label>
+      <label class="chip"><input type="checkbox" data-adv="dg"> Deco gases</label>
+      <label class="chip"><input type="checkbox" data-adv="ds"> Deco schedule</label>
+    </div>
+    <div id="pSaved" style="margin-top:10px"></div>
+    <div class="muted" id="pMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Team</h2>
+    <div id="pTeam"></div>
+    <div class="row" style="margin-top:8px"><select id="pAddSel" style="width:auto"></select><button class="btn sm" id="pAdd">+ Add to team</button></div>
+    <p class="muted" style="margin:8px 0 0">List order = team order. Rock bottom always assumes two divers sharing gas.</p>
+  </div>
+
+  <div class="card">
+    <h2>Environment</h2>
+    <div class="grid">
+      <div><label>Water</label><select data-k="water"><option value="33">Salt (33 ft/atm)</option><option value="34">Fresh (34 ft/atm)</option></select></div>
+      <div><label>Water temp (°F)</label><input type="number" data-k="temp"></div>
+      <div><label>Visibility (ft)</label><input type="number" data-k="vis"></div>
+      <div><label>Current</label><select data-k="current"><option>None</option><option>Light</option><option>Moderate</option><option>Strong</option></select></div>
+      <div><label>Light</label><select data-k="light"><option>Day</option><option>Dusk / dawn</option><option>Night</option></select></div>
+      <div><label>Entry / exit</label><input type="text" data-k="entry" placeholder="shore stairs, boat ladder…"></div>
+      <div style="grid-column:1/-1"><label>Route &amp; hazards</label><input type="text" data-k="route" placeholder="heading out / back, boat traffic, entanglement…"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Profile &amp; limits</h2>
+    <div class="grid">
+      <div><label>Max depth (ft)</label><input type="number" data-k="depth" step="5" min="1" max="330"></div>
+      <div><label>Planned bottom time (min)</label><input type="number" data-k="bt" min="1"></div>
+      <div style="grid-column:1/-1"><label>Bottom gas O₂ — <span id="pO2Lbl" style="color:var(--text);text-transform:none;letter-spacing:0"></span></label>
+        <div class="row" style="flex-wrap:nowrap;gap:10px"><input type="range" id="pO2Range" data-k="o2" min="21" max="40" step="1" list="o2ticks" style="flex:1;accent-color:var(--accent)">
+        <input type="number" data-k="o2" min="5" max="100" style="width:72px"></div>
+        <datalist id="o2ticks"><option value="21"></option><option value="32"></option><option value="36"></option></datalist>
+        <div class="row muted" id="pO2Ticks" style="justify-content:space-between;font-size:11px;margin-right:82px"></div></div>
+      <div class="tmx"><label>Gas He %</label><input type="number" data-k="he" min="0" max="90"></div>
+      <div class="tmx"><label>END limit (ft)</label><input type="number" data-k="endLim" step="10"></div>
+      <div><label>Max working pO₂</label><select data-k="po2"><option value="1.2">1.2</option><option value="1.4">1.4</option></select></div>
+      <div><label>Gas density limit</label><select data-k="dens"><option value="5.2">5.2 g/L recommended</option><option value="6.2">6.2 g/L absolute max</option></select></div>
+      <div><label>Ascent rate</label><select data-k="arate"><option value="10">10 ft/min</option><option value="20">20 ft/min</option><option value="30">30 ft/min</option></select></div>
+      <div><label>Safety stop</label><select data-k="stop"><option>3 min @ 15 ft</option><option>5 min @ 15 ft</option><option>1 min @ 20 ft + 2 min @ 10 ft</option><option>None planned</option></select></div>
+    </div>
+    <div class="gate" style="margin-top:12px" id="pModel"></div>
+    <div id="pTmx" class="tmx"></div>
+    <div class="out" style="margin-top:12px" id="pProfile"></div>
+    <div id="pLimitAlerts"></div>
+  </div>
+
+  <div class="card">
+    <h2>Gas plan</h2>
+    <div class="grid">
+      <div><label>Gas rule</label><select data-k="rule"><option value="all">All usable — ascend at rock bottom</option><option value="half">Halves of usable</option><option value="thirds">Thirds of usable</option></select></div>
+      <div><label>Stress SAC per diver</label><select data-k="stress"><option value="0.75">0.75 cfm</option><option value="1">1.00 cfm</option><option value="1.25">1.25 cfm</option><option value="1.5">1.50 cfm</option><option value="0">2× each diver's SAC</option></select></div>
+      <div><label>Problem time at depth</label><select data-k="ptime"><option value="1">1 min</option><option value="2">2 min</option><option value="3">3 min</option></select></div>
+      <div><label>Stop in rock bottom</label><select data-k="ss"><option value="0">Excluded</option><option value="1">3 min @ 15 ft</option></select></div>
+    </div>
+    <div id="pGas" style="margin-top:12px"></div>
+    <div id="pGasAlerts"></div>
+    <details style="margin-top:8px"><summary>Show the math</summary><div class="math" id="pMath"></div></details>
+    <div class="grid" id="pCustom" style="margin-top:10px;display:none">
+      <div><label>Custom: capacity per cylinder (cu ft)</label><input type="number" data-k="cCap" step="0.1"></div>
+      <div><label>Custom: rated pressure (psi)</label><input type="number" data-k="cRated"></div>
+      <div><label>Custom: cylinders</label><select data-k="cCount"><option value="1">1</option><option value="2">2</option></select></div>
+    </div>
+  </div>
+
+  <div class="card" id="pDecoCard">
+    <h2>Decompression</h2>
+    <div id="pDgBox">
+      <h3 style="margin-top:0">Deco gases</h3>
+      <div id="pDg"></div>
+      <div class="row" style="margin-top:8px"><button class="btn sm" data-adddg="50/0">+ EAN50</button><button class="btn sm" data-adddg="100/0">+ O₂</button><button class="btn sm" data-adddg="35/25">+ 35/25</button><button class="btn sm" data-adddg="21/35">+ 21/35</button>
+        <span class="muted">Reserve</span><select data-k="dgRes" style="width:auto"><option value="1.5">+50% (thirds)</option><option value="2">×2 (cover a teammate)</option></select></div>
+    </div>
+    <div id="pDsBox">
+      <h3>Schedule settings</h3>
+      <div class="grid">
+        <div><label>Last stop</label><select data-k="lastStop"><option value="20">20 ft</option><option value="10">10 ft</option></select></div>
+        <div><label>Descent rate</label><select data-k="desc"><option value="30">30 ft/min</option><option value="60">60 ft/min</option><option value="75">75 ft/min</option></select></div>
+      </div>
+      <p class="muted" style="margin:6px 0 0">Ascent uses the profile's ascent rate. Gradient factors are set under Profile &amp; limits.</p>
+    </div>
+    <div id="pDecoOut" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h2>Contingencies</h2>
+    <div id="pCont"></div>
+    <button class="btn sm" id="pContReset" style="margin-top:6px">Reset to defaults</button>
+    <h3 style="margin-top:16px">Contingency schedules &amp; deco ratios</h3>
+    <p class="muted" style="margin:0 0 8px">Recovery schedules if the dive goes wrong. They are <b>not</b> planned options — if a case below happens, end the dive and follow it.</p>
+    <div id="pRatio"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">Pre-dive checks</h2>
+      <div class="row"><span class="pill" id="pChkCount"></span><button class="btn sm" id="pChkReset">Clear checks</button></div>
+    </div>
+    <div id="pChecks" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">Brief</h2>
+      <button class="btn sm" id="pCopy">Copy brief</button>
+    </div>
+    <div class="math" id="pBrief" style="color:var(--text);font-size:13px"></div>
+  </div>
+</section>
+
+<!-- ================= LOG ================= -->
+<section id="v-log" class="view">
+  <div class="card" id="logSummary"></div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0" id="logFormTitle">Log a dive</h2>
+      <button class="btn sm" id="logReset">Clear form</button>
+    </div>
+    <form id="logForm" autocomplete="off" style="margin-top:10px">
+      <h3>Dive</h3>
+      <div class="grid">
+        <div><label>Date</label><input type="text" name="date" placeholder="YYYY-MM-DD"></div>
+        <div><label>Diver</label><select name="diver" id="lDiver"></select></div>
+        <div><label>Site</label><input type="text" name="site"></div>
+        <div><label>Water</label><select name="water"><option value="33">Salt</option><option value="34">Fresh</option></select></div>
+        <div><label>Water temp (°F)</label><input type="number" name="temp"></div>
+        <div><label>Visibility (ft)</label><input type="number" name="vis"></div>
+      </div>
+      <h3>Equipment</h3>
+      <div class="grid">
+        <div><label>Exposure protection</label><select name="expo" id="lExpo"></select></div>
+        <div><label>Exposure details</label><input type="text" name="expoNote" placeholder="hood, gloves, undergarment…"></div>
+        <div><label>Weight (lb)</label><input type="number" name="weight" step="0.5"></div>
+        <div><label>Tank configuration</label><select name="tank" id="lTank"></select></div>
+        <div><label>Gas O₂ %</label><input type="number" name="o2" min="21" max="100" value="21"></div>
+      </div>
+      <div class="grid" id="lCustom" style="display:none;margin-top:10px">
+        <div><label>Capacity per cylinder (cu ft)</label><input type="number" name="cCap" step="0.1" value="80"></div>
+        <div><label>Rated pressure (psi)</label><input type="number" name="cRated" value="3000"></div>
+        <div><label>Cylinders</label><select name="cCount"><option>1</option><option>2</option></select></div>
+      </div>
+      <h3>Profile &amp; gas</h3>
+      <div class="grid">
+        <div><label>Start pressure (psi)</label><input type="number" name="start" step="100"></div>
+        <div><label>End pressure (psi)</label><input type="number" name="end" step="100"></div>
+        <div><label>Max depth (ft)</label><input type="number" name="maxD"></div>
+        <div><label>Average depth (ft)</label><input type="number" name="avgD" placeholder="from computer"></div>
+        <div><label>Dive time (min)</label><input type="number" name="time"></div>
+        <div><label>Instar</label><select name="stage" id="lStage"></select></div>
+      </div>
+      <div class="big" style="margin-top:12px" id="lCalc"></div>
+
+      <h2 style="margin-top:22px">After action review</h2>
+      <p class="muted" style="margin-top:0;font-size:13px">Four questions, answered honestly and without blame. Short answers are fine — specifics beat length.</p>
+
+      <h3>1 · What was supposed to happen?</h3>
+      <div class="grid">
+        <div><label>Planned max depth (ft)</label><input type="number" name="planD"></div>
+        <div><label>Planned bottom time (min)</label><input type="number" name="planT"></div>
+        <div><label>Turn / ascend at (psi)</label><input type="number" name="planTurn" step="100"></div>
+      </div>
+      <label style="margin-top:8px">Objectives</label>
+      <textarea name="planObj" rows="2" class="aar" placeholder="What the dive was for — filled in from the plan when you use Log this dive"></textarea>
+
+      <h3>2 · What actually happened?</h3>
+      <div id="lDiff"></div>
+      <textarea name="aarActual" rows="3" class="aar" placeholder="Sequence of events. What did you see, do and decide? Note times or pressures where something changed."></textarea>
+
+      <h3>3 · Why was there a difference?</h3>
+      <textarea name="aarWhy" rows="2" class="aar" placeholder="Root causes, not symptoms. Planning, equipment, skill, conditions, communication or team? Ask “why” until it stops being useful."></textarea>
+
+      <h3>4 · What will we sustain and improve?</h3>
+      <div class="grid">
+        <div><label>Sustain — what worked</label><textarea name="aarSustain" rows="3" class="aar" placeholder="Keep doing…"></textarea></div>
+        <div><label>Improve — what changes</label><textarea name="aarImprove" rows="3" class="aar" placeholder="Next time we will…"></textarea></div>
+      </div>
+
+      <h3>Training credit</h3>
+      <p class="muted" style="margin:0 0 6px;font-size:13px">Experiences completed and skills demonstrated on this dive. Saving updates this diver's Training report card, dated to the dive.</p>
+      <div id="lCredit"></div>
+
+      <h3>Issues &amp; incidents</h3>
+      <div class="incs">
+        <label class="chip"><input type="checkbox" name="inc_freeflow"> Free-flow</label>
+        <label class="chip"><input type="checkbox" name="inc_leak"> Leak / bubbles</label>
+        <label class="chip"><input type="checkbox" name="inc_buoy"> Buoyancy control</label>
+        <label class="chip"><input type="checkbox" name="inc_sep"> Team separation</label>
+        <label class="chip"><input type="checkbox" name="inc_share"> Gas sharing</label>
+        <label class="chip"><input type="checkbox" name="inc_lowgas"> Below turn / rock bottom</label>
+        <label class="chip"><input type="checkbox" name="inc_limit"> Exceeded a planned limit</label>
+        <label class="chip"><input type="checkbox" name="inc_ears"> Ears / sinus</label>
+        <label class="chip"><input type="checkbox" name="inc_thermal"> Thermal</label>
+        <label class="chip"><input type="checkbox" name="inc_gear"> Gear lost / damaged</label>
+      </div>
+      <input type="text" name="incNotes" placeholder="What happened and how it was handled" style="margin-top:8px">
+
+      <h3>How it felt</h3>
+      <div class="grid">
+        <div><label>Workload</label><select name="workload"><option value="">—</option><option value="1">1 · Easy</option><option value="2">2</option><option value="3">3 · Moderate</option><option value="4">4</option><option value="5">5 · Maxed out</option></select></div>
+        <div><label>Stress</label><select name="stress"><option value="">—</option><option value="1">1 · Calm</option><option value="2">2</option><option value="3">3 · Alert</option><option value="4">4</option><option value="5">5 · Near panic</option></select></div>
+        <div><label>Thermal</label><select name="thermal"><option value="">—</option><option value="1">1 · Very cold</option><option value="2">2</option><option value="3">3 · OK</option><option value="4">4</option><option value="5">5 · Comfortable</option></select></div>
+        <div><label>Narcosis</label><select name="narc"><option value="">—</option><option>None</option><option>Mild</option><option>Noticeable</option><option>Strong</option></select></div>
+      </div>
+
+      <h3>For future reference</h3>
+      <label>Site notes</label>
+      <textarea name="siteNotes" rows="2" class="aar" placeholder="Entry/exit, hazards, best areas, depth contours, currents, parking, permissions…"></textarea>
+      <label style="margin-top:8px">Gear notes</label>
+      <input type="text" name="gearNotes" placeholder="Weighting changes, configuration tweaks, things to fix before next dive">
+
+      <h3>Learn more</h3>
+      <div id="lLearn"></div>
+      <label style="margin-top:8px">Next dive focus</label>
+      <input type="text" name="nextFocus" placeholder="The one or two things to work on next time">
+      <label style="margin-top:8px">Questions to research</label>
+      <textarea name="research" rows="2" class="aar" placeholder="What do you want to understand better after this dive?"></textarea>
+      <div class="row" style="margin-top:12px">
+        <button type="submit" class="btn pri" id="logSave">Save dive</button>
+        <span class="muted" id="logMsg"></span>
+      </div>
+    </form>
+  </div>
+  <div id="logList"></div>
+</section>
+
+<!-- ================= TRAINING ================= -->
+<section id="v-train" class="view">
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div class="row">
+        <label style="margin:0">Diver</label>
+        <div class="seg" id="diverSeg"></div>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="renameDiver">Rename</button>
+        <button class="btn sm" id="addDiver">+ Diver</button>
+      </div>
+    </div>
+    <details style="margin-top:10px"><summary>Why “instar”?</summary>
+      <div class="muted" style="margin-top:6px;font-size:13px">An <b style="color:var(--text)">instar</b> is the stage an aquatic insect lives in between molts. A dragonfly nymph spends years underwater, growing through instar after instar, shedding a skin each time it outgrows the last, until it finally emerges. Each instar here is the same: you stay until the work is done — every experience checked, every skill performing, every gate excelling — and only then molt into the next. Certifications are a card; an instar is earned.</div></details>
+    <details style="margin-top:10px"><summary>How grading works</summary>
+      <div class="muted" style="margin-top:6px;font-size:13px">
+        <b style="color:var(--text)">Developing</b> — completes the skill with coaching, hesitation, or visible corrections.<br>
+        <b style="color:var(--text)">Performing</b> — completes it independently and to standard, repeatably across dives.<br>
+        <b style="color:var(--text)">Excelling</b> — to standard under task load or changing conditions, without hesitation; could demonstrate it for a teammate.<br><br>
+        Where a skill has a measurable standard, tap “Target” under it to see the depth, angle, time or distance for each level.<br><br>A instar is complete when every <b style="color:var(--text)">experience</b> is checked, every <b style="color:var(--text)">supporting skill</b> is Performing or better, and every <b style="color:var(--text)">performance gate</b> is Excelling. Tap a SKILL/EXP tag to switch how an item is tracked.
+      </div></details>
+    <div id="renameBox" class="row" style="margin-top:10px;display:none">
+      <input type="text" id="renameIn" style="max-width:220px"><button class="btn pri sm" id="renameOk">Save</button>
+    </div>
+  </div>
+
+  <div class="stages" id="stageList"></div>
+  <div id="stageDetail"></div>
+
+  <div class="card">
+    <h2>Backup &amp; restore</h2>
+    <p class="muted" style="margin-top:0">Training progress and dive log are saved in this browser only. Copy the backup text somewhere safe, or paste it here to restore.</p>
+    <div class="row">
+      <button class="btn" id="exportBtn">Show backup</button>
+      <button class="btn" id="copyBtn">Copy backup</button>
+      <button class="btn" id="importBtn">Restore from text</button>
+      <span class="muted" id="ioMsg"></span>
+    </div>
+    <textarea id="io" style="margin-top:8px;display:none"></textarea>
+  </div>
+</section>
+
+<div id="installSheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="installTitle">
+  <div class="sheet-card">
+    <h2 id="installTitle" style="margin:0 0 8px">Install Instar</h2>
+    <div id="installSteps"></div>
+    <p class="muted" style="font-size:13px">Installed, Instar opens full-screen from your home screen and works offline at the dive site.</p>
+    <button class="btn pri" id="installClose" style="width:100%">Got it</button>
+  </div>
+</div>
+<div id="updateToast" class="toast" hidden role="status"><span>A new version of Instar is ready.</span><button class="btn sm pri" id="updateBtn">Reload</button></div>
+<div class="foot">Planning aid only. Verify every plan against your training agency's standards and your own tables/computer.</div>
+</main>
+
+<script>
+/* ---------------- DATA ---------------- */
+// Tank factor TF = capacity(cu ft) / (rated psi / 100)  → cu ft per 100 psi
+const TANKS = [
+  {id:"al40",  name:"AL40",  cap:40,   rated:3000, n:1},
+  {id:"al63",  name:"AL63",  cap:63,   rated:3000, n:1},
+  {id:"al80",  name:"AL80",  cap:77.4, rated:3000, n:1},
+  {id:"hp80",  name:"HP80 (steel)",  cap:80,  rated:3442, n:1},
+  {id:"hp100", name:"HP100 (steel)", cap:100, rated:3442, n:1},
+  {id:"hp120", name:"HP120 (steel)", cap:120, rated:3442, n:1},
+  {id:"lp85",  name:"LP85 (steel)",  cap:85,  rated:2640, n:1},
+  {id:"d-al80",  name:"Double AL80",  cap:77.4, rated:3000, n:2},
+  {id:"d-hp80",  name:"Double HP80",  cap:80,  rated:3442, n:2},
+  {id:"d-hp100", name:"Double HP100", cap:100, rated:3442, n:2},
+  {id:"d-hp120", name:"Double HP120", cap:120, rated:3442, n:2},
+  {id:"d-lp85",  name:"Double LP85",  cap:85,  rated:2640, n:2},
+  {id:"custom",  name:"Custom…", cap:80, rated:3000, n:1},
+];
+const SAC_OPTS = [
+  {v:0.40, l:"Relaxed"}, {v:0.50, l:"Normal"}, {v:0.60, l:"Cold / working"},
+  {v:0.75, l:"Hard work"}, {v:1.00, l:"Stressed"}
+];
+const STRESS_OPTS = [0.75, 1.0, 1.25, 1.5, 0]; // 0 = 2× each diver's selected SAC
+const PTIME_OPTS = [1, 2, 3];
+const ARATE_OPTS = [10, 20, 30];
+
+const PRINCIPLES = ["Plan the dive","Conserve energy","Use safety equipment","Manage decompression","Maintain situational awareness","Maintain team integrity"];
+
+// Each stage: env, config, purpose, prereqs (stage numbers), limits, items[6] = [concepts[], gate]
+const STAGES = [
+{n:1,t:"Basic Open Water",env:"Warm, shallow, daylight, clear open water",cfg:"Single cylinder",
+ purpose:"Establish safe, comfortable foundational diving habits in a simple environment.",pre:[],
+ limits:["Open water only; daylight; clear, warm, shallow","No-decompression only","Single cylinder"],
+ items:[
+ [["Dive objective and site conditions","Depth/time limits and no-decompression awareness","Buddy assignment; entry/exit and basic gas plan","Pre-dive equipment check and briefing"],"Complete a consistent pre-dive check; state the planned depth/time limits, gas-monitoring plan and lost-buddy response."],
+ [["Correct weighting","Basic buoyancy and controlled depth changes","Basic trim and relaxed finning","Breathe normally; avoid unnecessary hand movement"],"Hold a shallow hover and maintain depth during a simple swim without contacting the bottom or making repeated large buoyancy corrections."],
+ [["Mask clearing and regulator recovery","Alternate-air-source location and use","SPG and dive-computer display awareness","Basic hand signals and surface signaling"],"Clear a partially flooded mask, recover and clear a regulator, locate the alternate air source, and communicate basic status/attention signals."],
+ [["Pressure, equalization and basic gas absorption","No-decompression limits and computer alerts","Controlled ascent and safety-stop purpose","Basic DCS signs and post-dive response"],"Perform a controlled ascent at the trained rate, monitor depth and time, and complete the planned stop without uncontrolled buoyancy changes."],
+ [["Monitor depth, time, gas and buddy","Recognize changing comfort, conditions and equipment status"],"Respond correctly when prompted about depth, time, remaining gas, buddy location and planned route."],
+ [["Buddy proximity and visual contact","Basic underwater communication","Gas-sharing responsibility"],"Maintain agreed proximity, acknowledge signals and respond appropriately to a simulated out-of-gas indication under supervision."]
+ ]},
+{n:2,t:"Precision Open Water",env:"Same simple environment; deliberate skill practice",cfg:"Single cylinder",
+ purpose:"Turn basic control into repeatable precision before adding environmental or equipment demands.",pre:[1],
+ limits:["Same simple open-water environment as Instar 1","No-decompression only","Single cylinder"],
+ items:[
+ [["Structured team briefing and pre-dive sequence","Turn pressure/time and agreed limits","Simple contingency discussion; plan-vs-actual review","[R] Emergency action plan: EMS access, nearest chamber, oxygen kit location"],"Conduct a briefing covering objective, route, depth/time, gas limits, communications, lost-buddy response and exit plan."],
+ [["Horizontal trim and neutral hovering","Frog kick and modified frog kick","Back kick and helicopter turn","Buoyancy control while task-loaded"],"Hold a stable horizontal hover; demonstrate controlled forward, backward and rotational movement without hand sculling or disturbing the bottom."],
+ [["Consistent equipment placement and streamlining","Long-hose donation configuration","SMB and spool operation","Compass basics and reciprocal heading","[R] Emergency oxygen administration"],"Demonstrate the team's gas-donation procedure and deploy/retrieve an SMB while maintaining controlled buoyancy and line awareness."],
+ [["Instrument-led ascent and stop control without visual depth cues","Computer ceiling/stop vs NDL information"],"Hold the prescribed stop depth within the performance standard while monitoring time and team position."],
+ [["Task switching while retaining depth, gas and buddy awareness","Basic compass navigation and route confirmation","[R] Recognizing a stressed or panicked diver, at the surface and underwater","[R] Self-rescue: cramp, entanglement and out-of-gas response"],"Navigate a simple out-and-back route and return to the agreed exit area without losing team contact or depth control."],
+ [["Team positioning and coordinated movement","Standardized gas donation and controlled ascent practice","[R] Assisting a tired diver; surface tow with equipment removal","[R] Unresponsive diver recovery from depth with a controlled ascent","[R] In-water rescue breaths and exit; handoff to EMS"],"Complete a practiced donation-and-ascent sequence as a team, maintaining control and communication throughout."]
+ ]},
+{n:3,t:"Cold Water & Exposure Protection",env:"Cold water; reduced thermal margin",cfg:"Single cylinder + exposure protection",
+ purpose:"Introduce thermal management and, where appropriate, drysuit operation in otherwise familiar open-water conditions.",pre:[2],
+ limits:["Otherwise familiar open-water conditions","No-decompression only","Single cylinder; new suit weighting verified"],
+ items:[
+ [["Thermal exposure and task-duration planning","Cold-water entry/exit, surface support and logistics","Exposure-protection checks and abort criteria"],"Brief thermal limits, exit options, surface support and the response to loss of thermal protection or suit function."],
+ [["Drysuit buoyancy and air migration (if drysuit)","Managing buoyancy between suit and wing","Weighting for new exposure protection"],"Demonstrate controlled descent, hover, position change and ascent in the exposure suit without uncontrolled gas migration or buoyancy excursions."],
+ [["Drysuit inflation and exhaust operation","Inflator connect/disconnect and suit-failure response","Cold-water regulator considerations"],"Operate inflator and exhaust deliberately; demonstrate the taught response to a simulated inflator or suit problem."],
+ [["Thermal stress as a dive-risk factor","Cold-related changes to workload and ascent decisions"],"Identify thermal stress early and make a conservative, team-coordinated decision to end or modify the dive."],
+ [["Monitoring thermal comfort and dexterity","Recognizing cold impairment before it affects tasks","[R] Recognizing and responding to hypothermia in a teammate"],"Communicate changing thermal status and complete critical tasks without impaired equipment handling."],
+ [["Buddy checks specific to exposure suit","Monitoring a teammate for cold stress","[R] Rescue in thick exposure protection: controlling both divers' buoyancy on ascent"],"Identify a simulated teammate thermal problem and coordinate a controlled end to the dive."]
+ ]},
+{n:4,t:"Night & Limited Visibility",env:"Darkness or reduced visibility; open water",cfg:"Single cylinder + primary & backup lights",
+ purpose:"Adapt established open-water skills to reduced visual references without introducing overhead restrictions.",pre:[2],
+ limits:["Open water only — no overhead","No-decompression only","Primary + backup light required"],
+ items:[
+ [["Night-specific site orientation and entry/exit identification","Light quantity, battery and failure planning","Lost-buddy procedures for reduced visibility"],"Identify entry/exit and navigation references before descent; explain primary and backup light failure and lost-team actions."],
+ [["Hovering without dependable visual references","Avoiding silt disturbance in limited visibility"],"Maintain depth and trim while navigating in reduced visibility without uncontrolled finning or bottom contact."],
+ [["Primary and backup dive lights","Light signals and light discipline","Light attachment, stowage and failure transition","[R] Distress and attention light signals: recognizing and responding"],"Demonstrate agreed light signals and transition to a backup light after a simulated primary-light failure."],
+ [["Instrument-based ascent and stop control without visual references"],"Complete a controlled ascent and any planned stop while maintaining team cohesion in reduced visibility."],
+ [["Orientation by compass and limited references","Managing tunnel vision and disorientation"],"Follow a simple planned route and identify a deliberate change in direction without losing team orientation."],
+ [["Light-based communication","Procedures for temporary visual separation","[R] Lost-diver search in darkness"],"Recognize a lost-buddy event, carry out the pre-briefed search/termination procedure and reunite or surface as planned."]
+ ]},
+{n:5,t:"Increased Depth & Duration",env:"Deeper open water; longer exposure",cfg:"Single cylinder; gas per training",
+ purpose:"Add depth physiology, gas planning and extended exposure while staying within no-decompression training.",pre:[2],
+ limits:["Within no-decompression limits","Nitrox only if trained; PO₂ within agency limit","Rock bottom calculated for every dive"],
+ items:[
+ [["Quantitative gas planning and reserve strategy","Gas matching and turn criteria","Narcosis, gas density and workload at depth","Nitrox planning and O₂ exposure limits (if trained)"],"Present a written/slate plan with depth/time, gas, usable gas, reserve/turn criteria, contingencies and a clear abort point."],
+ [["Managing work of breathing and exertion at depth","Adjusting pace and task loading for longer exposure"],"Complete the planned profile at a sustainable pace without persistent overexertion or loss of buoyancy/trim."],
+ [["Gas analyzer use and personal gas verification","Cylinder labeling and gas identification"],"Analyze and label the cylinder, record the result, and independently confirm the gas suits the planned depth and exposure."],
+ [["Repetitive-dive planning and surface intervals","Residual nitrogen and cumulative exposure","PO₂ and CNS/OTU concepts (nitrox)","Limits and assumptions of computer models"],"Produce a repetitive-dive plan using an approved method and correctly identify the computer's limits and alerts."],
+ [["Narcosis recognition and self/team assessment","Gas consumption trends vs plan","[R] Recognizing and assisting a narcosis-impaired diver"],"Identify a simulated narcosis or abnormal gas-consumption cue and initiate the pre-agreed response."],
+ [["Team gas matching and coordinated turn decisions","Team response to depth-related impairment","[R] Unresponsive diver from depth: controlled ascent without runaway buoyancy"],"Demonstrate a team turn based on gas, time or condition limits without debate or separation."]
+ ]},
+{n:6,t:"Redundant Equipment & Doubles",env:"Familiar open water; familiar conditions",cfg:"Back-mounted doubles",
+ purpose:"Learn operation and failure management of a redundant back-gas system before adding deco or overhead.",pre:[5],
+ limits:["Familiar open water","No required decompression","Doubles with isolation manifold"],
+ items:[
+ [["Redundant-system gas strategy and minimum-gas calc","Failure-mode analysis: manifold, valves, regulators","Doubles-specific equipment and team checks"],"Explain the system, identify failure points and calculate the trained reserve/turn strategy."],
+ [["Buoyancy and trim with doubles","Movement and handling with increased mass"],"Hold stable trim and depth during turns, stops and basic tasks without hand sculling."],
+ [["Manifold and isolator function","Valve shutdown drill and regulator-failure response","S-drill / gas donation in actual configuration","Backup regulator and hose management"],"Demonstrate the valve drill and team gas-donation sequence accurately, calmly and in the correct order."],
+ [["Apply existing ascent and NDL limits to the redundant configuration"],"Complete a simulated gas-system failure and controlled ascent without exceeding established limits."],
+ [["Monitoring manifold/valve status and available gas","Recognizing failure vs perceived failure"],"Diagnose a scripted failure and state which gas source remains available and what action is appropriate."],
+ [["Team gas-sharing with doubles","Valve-drill roles and post-drill status confirmation","[R] Rescue and gas sharing with doubles; shutting down a teammate's valve"],"Complete a team failure drill, confirm gas availability and return to a stable, agreed plan."]
+ ]},
+{n:7,t:"Planned Decompression",env:"Open water; planned required stops",cfg:"Doubles + decompression cylinder(s)",
+ purpose:"Introduce dives with intentional decompression obligations, formal planning, gas switching and contingencies.",pre:[6],
+ limits:["Open water only","Decompression within current qualification","Every cylinder analyzed and labeled"],
+ items:[
+ [["Deco schedule generation and verification","Deco gas quantity and reserve planning","Gas-switch depth/sequence and cylinder-failure contingencies","Bailout and omitted/altered deco planning"],"Prepare and independently cross-check the plan: gases, switch points, stop schedule, reserves and taught contingencies."],
+ [["Stable hovering and cylinder handling during staged ascent","Task management while holding stop depth and team position"],"Maintain the required stop depth while completing a cylinder-handling or gas-switch task."],
+ [["Deco cylinder rigging and identification","Analysis, labeling and verification of each cylinder","Gas-switch procedure and regulator identification"],"Demonstrate the full gas verification and switch protocol, including team confirmation and return to the correct regulator."],
+ [["Ceilings and stop obligations","Staged ascent and variable ascent rates","Oxygen exposure management","Schedule deviations and model limits","[R] Oxygen-toxicity seizure at a stop: response and ascent decision","[R] Managing missed or omitted decompression"],"Execute the planned ascent and switches within limits; respond to a simulated schedule deviation with the taught procedure."],
+ [["Tracking depth, time, stop status and active gas","Monitoring teammates' deco progress"],"At each check, correctly state depth, stop/time status, active gas and next planned action."],
+ [["Coordinated gas switches and deco ascent","Gas sharing during deco"],"Complete a team gas-switch and ascent scenario, including a practiced contingency, without losing coordination."]
+ ]},
+{n:8,t:"Intro Overhead: Cavern & Simple Wreck",env:"Cavern daylight zone, or simple wreck penetration with the exit in sight",cfg:"Configuration per cavern / intro wreck training",
+ purpose:"Introduce overhead limitations and guideline discipline where the exit stays close and visible — not cave or deep wreck penetration.",pre:[4,6],
+ limits:["[C] Cavern: daylight zone with direct access to the surface","[W] Wreck: light zone, exit visible; one main guideline (≤100 ft, no deco)","Continuous guideline to open water","No new decompression technique"],
+ items:[
+ [["[C] Cavern limits and daylight-zone boundary","Overhead gas limits and conservative penetration","Overhead site, exit and emergency briefing","[W] Wreck research: layout, deck plans, condition and known hazards","[W] Light-zone penetration limit and exit points identified before entry","[W] Site rules and permissions (protected or war-grave wrecks)","[C] Cave entry criteria: minimum 10 ft visibility and minimum starting gas volume","[C] Cave conservation and site etiquette (landowner rules, entry procedures)"],"Brief boundaries, route, gas rule, exit plan, team order and abort criteria before entry."],
+ [["Propulsion near fragile features and sediment","Body position and fin placement in restricted space","[W] Trim and propulsion that avoid silt and rust-fall; no hand contact with structure","[C] Kicks for silt, clay and percolation: backward kick and helicopter turn"],"Traverse the planned route without damaging the environment (formations or fragile wreck structure) or creating avoidable silt or rust-fall."],
+ [["Primary reel and guideline tie-offs","Line arrows/markers and etiquette","Cutting-device access and use","[W] Tie-offs on wreck structure that avoid sharp edges and line traps","[W] Running line clear of hanging cables, nets and debris","[C] Personal markers: directional arrows vs non-directional cookies; marking your exit at an intersection"],"Identify the line, markers and exit direction; demonstrate trained reel/line procedures."],
+ [["Apply only decompression qualification already held"],"Show that the planned profile, gas and exit stay compatible with existing qualification limits."],
+ [["Continuous awareness of boundary, exit and line","Recognizing disorientation and visibility loss","[W] Recognizing structural hazards: collapse, overhead debris, sharp metal, nets and fishing line","[W] Orienting to wreck features (bow/stern, list) and compass deviation near steel","[C] Reading flow: how outflow or inflow changes gas use going in vs coming out","[C] Light discipline as the daylight zone fades"],"Identify the exit route and boundary at all times; respond correctly to a simulated loss of orientation."],
+ [["Team order and spacing on a guideline","Overhead communication and exit coordination","[W] Team order through doorways, hatches and companionways","[C] Light signals and passing on the line","[R] Unresponsive diver recovery along the guideline (horizontal tow)"],"Move as a coordinated team and execute the agreed exit response to a simulated problem."]
+ ]},
+{n:9,t:"Extended Overhead",env:"Qualified cave or wreck penetration",cfg:"Guideline, redundant gas, stages as trained",
+ purpose:"Develop penetration, navigation and emergency competencies where direct ascent is unavailable.",pre:[7,8],
+ limits:["Penetration within specific qualification","Environment-specific gas rule (e.g. thirds of usable)","Stages only as trained"],
+ items:[
+ [["Penetration gas strategy and limits","Primary/secondary lines, jumps/gaps and navigation","Stage placement, use and retrieval","Lost-line, lost-team and exit contingencies","[W] Multi-level penetration planning: decks, vertical changes, restrictions","[W] Contingencies for silt-outs and changed structure (shifted debris, closed doors)","[C] Complex navigation planning: jumps, gaps, circuits and traverses","[C] Gas rules adjusted for flow: thirds, or stricter in siphons"],"Produce a route and gas plan with line strategy, team order, stages, turn/exit criteria and emergency actions."],
+ [["Precision propulsion in restrictions and silty passages","Stage drops, pickups and exchanges under control","[W] Moving through vertical penetrations and tight passages without contact","[C] Moving against flow: pull-and-glide without damaging the cave"],"Demonstrate stable trim and controlled stage handling without damaging the environment or compromising the guideline."],
+ [["Penetration reel, jump/gap spools and markers","Guideline continuity and line-trap awareness","Stage and equipment stowage for restrictions","[W] Jumps and T's on wreck structure","[W] Broken and cut line repair","[W] Line-trap avoidance around doors, hatches and machinery","[C] Marking jumps and intersections with personal markers for the exit"],"Demonstrate line deployment/connection and stage handling; identify line hazards and keep a cutting tool accessible."],
+ [["Integrating exit time/gas with deco obligation","Deco contingencies when exit is delayed","[W] Deco on the shot/upline or drifting under a DSMB after the penetration","[C] Sawtooth profiles: deco cost of depth changes during the penetration"],"Show that planned gas and schedule support the full exit and any deco; explain the response to delay."],
+ [["3-D navigation and line position","Stage locations, restrictions and route-finding","Tracking penetration distance/time and gas vs plan","[W] 3-D orientation inside a listing or inverted hull","[W] Tracking the route through rooms, levels and turns with no exit light","[C] Reading line arrows, including a midpoint where they reverse","[C] Mental mapping during the dive and sketching the route afterward"],"Navigate the route, locate staged equipment and identify the exit without losing line awareness or exceeding limits."],
+ [["Team positioning in restrictions and line work","Gas-sharing and exit coordination in overhead","Touch-contact / zero-visibility procedures","[W] Coordinating with boat/surface support, shotline and recovery","[C] Single-file restrictions: team order, gas-sharing plan and communication","[R] Gas sharing and rescue through restrictions"],"Complete a supervised simulated overhead problem, maintaining line contact, team cohesion and the exit procedure."]
+ ]},
+{n:10,t:"Deep Technical Overhead (OC)",env:"Deep cave or complex wreck penetration",cfg:"Mixed-gas open-circuit, multiple stages",
+ purpose:"Integrate deep mixed-gas, multi-cylinder and extended-overhead planning. Specialist endpoint.",pre:[9],
+ limits:["Separate, specific mixed-gas qualification","Substantial experience required","Support logistics planned"],
+ items:[
+ [["Mixed-gas selection and analysis","Hypoxic-gas handling protocols","Multi-stage bottom/deco gas logistics","Support-team, drop-gas and surface logistics","Integrated penetration, bailout and deco planning","[W] Offshore logistics: slack water, current windows and long boat transits","[W] Weather and sea-state abort criteria","[C] Long-penetration logistics: multiple stage drops and distance","[C] Sump planning: dry sections, gear carries and re-entry"],"Produce and cross-check a complete plan: gases, MOD, stages, penetration, exit, deco, reserves and support logistics."],
+ [["Managing prolonged workload and equipment burden","Stage rotations and complex task sequences","[W] Descending the shot in current and settling workload and narcosis on arrival","[C] Pacing long penetrations and the return against flow"],"Demonstrate controlled stage rotation and task execution while maintaining depth, trim, team position and awareness."],
+ [["Multiple bottom and deco stages","Advanced gas-switch verification and failure management","Drop-gas and support-system procedures","[W] Upline/shot tie-in and release per team or boat protocol","[W] Deploying a DSMB from depth in current","[C] Stage drop and pickup sequencing across a long penetration"],"Identify, verify, switch and manage all planned gases, including the response to a missing/failed cylinder."],
+ [["Extended mixed-gas deco and switch sequencing","Gas sharing during deco and failure contingencies","Schedule resilience and contingency strategies","[W] Long open-water deco: drifting on a DSMB vs fixed upline or deco station","[W] Lost-shotline / free-ascent contingency","[C] Deco in the cave: habitats, dry chambers or on the line in flow"],"Execute the schedule and switches while maintaining team coordination; explain responses to specified failures."],
+ [["Concurrent management of penetration, gas, depth, time, deco and team","Recognizing cumulative task loading and shrinking margins","[W] Relocating the upline at the end of the dive in poor visibility (strobe, line to shot)","[C] Tracking time, gas and distance across multiple stage segments"],"Give accurate status at checkpoints and initiate the pre-agreed response when any limit or margin is threatened."],
+ [["Complex team order, stage logistics and support coordination","Integrated rescue within team qualification","[W] Boat pickup procedures and lost-diver-on-surface plan","[C] Support-diver roles: gas drops and deco support","[R] Rescue during long decompression: support divers and surface handoff"],"Complete rehearsed team scenarios with clear roles, communication, gas/resource tracking and coordinated exit/deco."]
+ ]}
+];
+// Extra non-skill prerequisites (checklist) per stage
+const PRE_CHECKS = {
+ 1:["Entry-level certification / supervised setting","Gear serviced and fitted"],
+ 2:["Long-hose / team configuration agreed"],
+ 3:["Exposure suit fitted and weight-checked","Drysuit orientation (if using drysuit)"],
+ 4:["Primary and backup lights tested and charged"],
+ 5:["Nitrox training (if using nitrox)","Own gas analyzer access"],
+ 6:["Doubles rig assembled and checked","Valve drill practiced on land"],
+ 7:["Decompression procedures certification","Deco cylinder rigged and labeled"],
+ 8:["Cavern or intro wreck penetration certification","Guideline reel and cutting tools"],
+ 9:["Cave/wreck penetration certification","Stage-cylinder training (if using stage cylinders)"],
+ 10:["Mixed-gas / trimix certification","Support team arranged"]
+};
+
+/* ---------------- STATE ---------------- */
+const KEY="diveapp.v1";
+const DEFAULT = {
+  tab:"plan",
+  gas:{tank:"al80",fill:3000,depth:60,water:33,sacMe:0.5,sacBuddy:0.5,stress:1.0,ptime:1,arate:10,ss:false,cCap:80,cRated:3000,cCount:1},
+  divers:[{id:"d1",name:"Diver 1"},{id:"d2",name:"Diver 2"}],
+  active:"d1", stage:1, prog:{}, log:[]
+};
+let S;
+try{ S = JSON.parse(localStorage.getItem(KEY)) || null }catch(e){ S=null }
+S = Object.assign(structuredClone(DEFAULT), S||{});
+S.gas = Object.assign(structuredClone(DEFAULT.gas), S.gas||{});
+if(!Array.isArray(S.log)) S.log=[];
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)) }catch(e){} }
+
+/* ---------------- HELPERS ---------------- */
+const f1=x=>(Math.round(x*10)/10).toFixed(1), f0=x=>Math.round(x).toLocaleString(), f2=x=>x.toFixed(2), f3=x=>x.toFixed(3);
+const $=s=>document.querySelector(s);
+function seg(el, opts, cur, fmt, onPick){
+  el.innerHTML = opts.map(o=>{ const v = typeof o==="object"?o.v:o; return `<button data-v="${v}" class="${v==cur?"on":""}">${fmt(o)}</button>`; }).join("");
+  el.onclick = e=>{ const b=e.target.closest("button"); if(!b) return; onPick(+b.dataset.v); };
+}
+
+/* ---------------- TRAINING ---------------- */
+const today=()=>new Date().toISOString().slice(0,10);
+function P_(d,n){ return P(d,n); }
+function P(diver, n){
+  S.prog[diver] ??= {};
+  const p = S.prog[diver][n] ??= {};
+  p.drills ??= {}; p.gates ??= {}; p.pre ??= {}; p.lim ??= {};
+  p.ex ??= {}; p.sk ??= {}; p.gate ??= {}; p.types ??= {};
+  migrateStage(p);
+  return p;
+}
+const GRADES=["Not yet","Developing","Performing","Excelling"];
+const GRADE_CLS=["","warn","","ok"];
+// Default tracking per principle: planning & decompression concepts are experiences (covered / done); in-water items are graded skills.
+const PR_DEFAULT=["exp","skill","skill","exp","skill","skill"];
+const SKILL_RX=/ascent|stop control|hover|switch|execut|check and briefing|analy[sz]er use|recogni[sz]|drifting|relocating|seizure|oxygen administration/i;
+// Environment tags on concept text: "[C] …" cave/cavern only, "[W] …" wreck only, untagged = both
+const envOf=c=>c.startsWith("[W] ")?"wreck":c.startsWith("[C] ")?"cave":c.startsWith("[R] ")?"rescue":"both";
+const txt=c=>c.replace(/^\[[CWR]\] /,"");
+const ENV_TAG={wreck:["WRECK","var(--accent2)"],cave:["CAVE","var(--accent)"],rescue:["RESCUE","var(--bad)"]};
+// Overhead stages are one combined cave + wreck curriculum: every item counts for every diver; tags only label the source environment.
+const trackOf=()=>"both";
+const inTrack=()=>true;
+function itemType(p,i,j,c){ const k=i+"."+j; if(p.types[k]) return p.types[k]; if(PR_DEFAULT[i]==="exp" && SKILL_RX.test(c)) return "skill"; return PR_DEFAULT[i]; }
+function migrateStage(p){
+  if(p.v2) return; p.v2=1;
+  Object.entries(p.drills||{}).forEach(([k,d])=>{ if(d && d.n>0){ p.ex[k]={d:d.last||today()}; p.sk[k] ??= {g:1,d:d.last||today(),h:[{g:1,d:d.last||today()}]}; } });
+  Object.entries(p.gates||{}).forEach(([i,att])=>{ if(!Array.isArray(att)||!att.length) return; const passes=att.filter(a=>a.p).length, last=att[att.length-1];
+    const g = passes>=3&&last.p ? 3 : passes ? 2 : 1; p.gate[i]={g,d:last.d,h:[{g,d:last.d}]}; });
+}
+function stageStatus(diver, n){
+  const st=STAGES[n-1], p=P(diver,n);
+  let ex=0,exT=0,sk=0,skT=0,gt=0,pts=0,max=0;
+  const tr=trackOf(p,n);
+  st.items.forEach(([concepts],i)=>{
+    concepts.forEach((c,j)=>{ const k=i+"."+j; if(!inTrack(c,tr)) return;
+      if(itemType(p,i,j,c)==="exp"){ exT++; max+=1; if(p.ex[k]){ ex++; pts+=1; } }
+      else { skT++; max+=2; const g=p.sk[k]?.g||0; if(g>=2) sk++; pts+=Math.min(g,2); } });
+    const g=p.gate[i]?.g||0; if(g>=3) gt++; max+=3; pts+=g;
+  });
+  const complete = ex===exT && sk===skT && gt===6;
+  const preStages = st.pre.every(k=>stageStatus(diver,k).complete);
+  return {ex,exT,sk,skT,gt,met:gt,total:6,pct:max?pts/max:0,complete,preStages};
+}
+function renderTrain(){
+  seg($("#diverSeg"), S.divers.map(d=>({v:d.id,l:d.name})), S.active, o=>o.l, ()=>{});
+  $("#diverSeg").querySelectorAll("button").forEach((b,i)=>{ b.dataset.v=S.divers[i].id; b.classList.toggle("on",S.divers[i].id===S.active) });
+  $("#diverSeg").onclick=e=>{ const b=e.target.closest("button"); if(!b)return; S.active=b.dataset.v; save(); renderTrain(); renderGas(); };
+  $("#stageList").innerHTML = STAGES.map(st=>{
+    const s=stageStatus(S.active, st.n);
+    const pill = s.complete?`<span class="pill ok">Complete</span>`: !s.preStages?`<span class="pill lock">Prereq</span>`: s.pct>0?`<span class="pill warn">${Math.round(s.pct*100)}%</span>`:`<span class="pill">Open</span>`;
+    return `<button class="st ${st.n===S.stage?"on":""}" data-n="${st.n}"><div class="n">Instar ${st.n} ${pill}</div><div class="t">${st.t}</div><div class="bar"><i style="width:${s.pct*100}%"></i></div></button>`;
+  }).join("");
+  renderStage();
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])) }
+const gradeSel=(attr,g)=>`<select ${attr} class="gsel g${g}">${GRADES.map((l,v)=>`<option value="${v}" ${v===g?"selected":""}>${l}</option>`).join("")}</select>`;
+const hist=r=>r&&r.h&&r.h.length?`<div class="muted" style="font-size:11px">${r.h.slice(-4).map(x=>`${GRADES[x.g]} ${x.d.slice(5)}`).join(" → ")}</div>`:"";
+const CREDS={cpr:"CPR / first aid",o2:"Emergency oxygen provider"};
+function credStatus(diver){ const c=(S.certs??={})[diver]||{}, t=today(); return Object.keys(CREDS).map(k=>({k,label:CREDS[k],exp:c[k]||"",ok:!!c[k]&&c[k]>=t})); }
+function credBlock(diver){
+  return `<h3>Rescue credentials</h3>${credStatus(diver).map(s=>`<div class="row" style="justify-content:space-between;margin:4px 0;flex-wrap:nowrap;gap:8px">
+    <span><span class="pill ${s.ok?"ok":"lock"}">${s.ok?"Current":s.exp?"Expired":"Missing"}</span> ${s.label}</span>
+    <input type="date" data-cert="${s.k}" value="${s.exp}" style="width:auto;padding:6px"></div>`).join("")}
+    <p class="muted" style="margin:4px 0 0;font-size:12px">Enter each card's expiration date. Shared across all stages.</p>`;
+}
+
+/* ---- Measurable performance standards per grade (Developing / Performing / Excelling) ----
+   Published anchors: trim/buoyancy ±5 ft & 30° (entry) → ±3 ft & 20° (technical/overhead); valve close/open <15 s each, full drill ~2 min;
+   backup light <30 s; power kicks 50 ft continuous; gas-sharing swim 200 ft; unresponsive-diver tow 100 ft. Other values are app planning standards. */
+const STANDARDS=[
+ {rx:/unresponsive diver|unconscious diver/i,
+  d:"Brings the diver up with help, or with an uncontrolled ascent",
+  p:"Controlled ascent at the planned rate; diver positively buoyant and airway managed at the surface",
+  e:"Same, then a 100 ft tow; overhead: horizontal recovery along the line before ascent"},
+ {rx:/surface tow|tired diver/i,
+  d:"Tows with frequent stops or loses the diver's airway position",
+  p:"Tows 100 ft keeping the diver's face clear; begins equipment removal",
+  e:"Tows 100 ft while giving rescue breaths about every 5 s and removing equipment"},
+ {rx:/valve shutdown|valve drill|manifold and isolator|shutting down a teammate/i,
+  d:"Completes the drill with coaching, misses a step, or loses depth",
+  p:"Each valve closed and reopened in under 15 s; full drill in about 2 min; within ±5 ft",
+  e:"Same times, within ±3 ft and 20° of horizontal, with each status confirmed to the team"},
+ {rx:/gas-switch|gas switch|switches|switch protocol|gas verification and switch/i,
+  d:"Switches with coaching or skips a verification step",
+  p:"Full protocol every time: depth/MOD confirmed, team check, correct regulator",
+  e:"Within ±3 ft at the switch depth, holding position, team check complete in under 1 min"},
+ {rx:/stage drop|stage handling|stage rotation|drops, pickups|stage drops/i,
+  d:"Clips or unclips a stage with depth change, line contact or help",
+  p:"Drops and picks up a stage in trim within ±5 ft, no line contact",
+  e:"Within ±3 ft and 20° of horizontal, in silt without disturbance"},
+ {rx:/backup light|primary-light failure|failure transition/i,
+  d:"Finds and switches on the backup with fumbling or loss of position",
+  p:"Backup deployed and on in under 30 s, within ±5 ft",
+  e:"Under 15 s by feel, holding position and signalling the team"},
+ {rx:/deploy\S* (a )?d?smb|smb and spool|retrieve an smb|surface marker/i,
+  d:"Deploys while kneeling, with a depth change over 5 ft, or with line slack",
+  p:"Deploys from neutral mid-water within ±5 ft; spool controlled; no entanglement",
+  e:"Deploys from neutral within ±3 ft, then ascends at the planned rate holding stops"},
+ {rx:/mask clearing|clear a partially flooded mask|backup mask|mask, backup/i,
+  d:"Clears a flooded mask with hesitation, depth change or a rush to ascend",
+  p:"Removes, replaces and clears mask in trim, within ±5 ft",
+  e:"Mask off, swims 50 ft in touch contact, then deploys backup mask, within ±3 ft"},
+ {rx:/regulator recovery|regulator exchange|recover and clear a regulator/i,
+  d:"Recovers the regulator with hesitation or a depth change",
+  p:"Recovers or exchanges calmly, within ±5 ft",
+  e:"Same with eyes closed, within ±3 ft"},
+ {rx:/back kick|helicopter/i,
+  d:"Moves backward or turns only with hand use, a large depth change, or not at all",
+  p:"Back kick at least 3 ft and 180° helicopter turn, no hands, within ±5 ft",
+  e:"Back kick at least 6 ft and 360° helicopter turn, within ±3 ft, while holding position near a teammate or line"},
+ {rx:/weighting/i,
+  d:"Weight changes dive to dive, or can't hold the last stop with low gas",
+  p:"Neutral at 15 ft with ~500 psi and an empty wing; no excess lead",
+  e:"Weight recorded for every suit/tank combination and confirmed on each new combination"},
+ {rx:/drysuit|air migration|suit and wing|inflator and exhaust/i,
+  d:"Feet-up or ballooning events; suit gas over- or under-managed",
+  p:"Suit gas managed through descent and ascent; stops within ±5 ft; no feet-up",
+  e:"Stops within ±3 ft; recovers from an inverted position without ascending"},
+ {rx:/lost-line|lost-buddy event|lost-diver search|lost-diver drill|lost-team/i,
+  d:"Starts the procedure late or out of order",
+  p:"Executes the procedure calmly, horizontal and neutral",
+  e:"Same, reconnecting or resolving within 1 min, within ±3 ft"},
+ {rx:/touch-contact|zero-visibility|line following/i,
+  d:"Loses the line or teammate contact when vision is removed",
+  p:"Follows the line 100 ft with eyes closed, teammate in touch contact",
+  e:"200 ft with eyes closed while sharing gas"},
+ {rx:/compass|reciprocal heading|out-and-back|navigation and route/i,
+  d:"Heading drifts; returns more than 30 ft from the exit",
+  p:"Out-and-back returns within about 15 ft of the start",
+  e:"Multi-leg pattern returns within about 10 ft while keeping team position"},
+ {rx:/gas analyzer|analyze and label/i,
+  d:"Analyzes with help or skips calibration",
+  p:"Calibrates, analyzes within ±1% of the fill label, records and signs",
+  e:"Does it unprompted and checks MOD against the plan before the dive"},
+ {rx:/tie-off|primary reel|penetration reel|running line|line deployment|jump|gap/i,
+  d:"Lays line with slack, line traps or missed placements",
+  p:"Primary and secondary tie-offs, line taut, no traps on inspection",
+  e:"Lays and removes line to plan in limited visibility; no traps; team informed at each placement"},
+ {rx:/light signals|light-based communication|distress and attention light/i,
+  d:"Misses or misreads signals",
+  p:"Recognizes and answers OK, attention and emergency signals immediately",
+  e:"Maintains light discipline and signals throughout, including during tasks"},
+ {rx:/gas donation|long-hose donation|donation configuration|s-drill|gas-sharing responsibility|donation-and-ascent|gas sharing/i,
+  d:"Completes donation with coaching, a missed step, or a depth change over 5 ft",
+  p:"Correct sequence on signal: long hose donated, donor on backup, both stable within ±5 ft",
+  e:"Sequence, then a 200 ft gas-sharing swim or controlled ascent, within ±3 ft"},
+ {rx:/hover|horizontal trim|shallow hover|trim and depth|stable trim|buoyancy control while task|controlled depth changes|buoyancy and trim/i,
+  d:"Holds depth with frequent corrections; drifts more than 5 ft or 30° off horizontal, or uses hands to stabilize",
+  p:"Within ±5 ft of target and 30° of horizontal for 1 min, hands still",
+  e:"Within ±3 ft and 20° of horizontal for 2 min while completing a task (signal, light, spool)"},
+ {rx:/frog kick|power kick|propulsion near|kicks for silt|propulsion that avoid|precision propulsion|relaxed finning|fin placement|without contact|pull-and-glide/i,
+  d:"Moves forward with occasional downwash, flutter or depth change; may raise silt",
+  p:"50 ft continuous with chosen kick, within ±5 ft, no silt raised behind",
+  e:"Switches between kicks on demand for 50 ft, within ±3 ft and 20° of horizontal, in silt or near structure without disturbance"},
+ {rx:/ascent|stop depth|stop control|safety-stop|stops|deco ascent|staged ascent|deco on the shot|drifting|long open-water deco/i,
+  d:"Exceeds the planned ascent rate or drifts more than 5 ft at a stop",
+  p:"Planned rate held; stops within ±5 ft for the full time",
+  e:"Stops within ±3 ft and rate within ±5 ft/min while switching gas, deploying an SMB or managing a teammate"},
+ {rx:/team position|team order|coordinated movement|proximity|spacing on a guideline/i,
+  d:"Separates beyond the agreed distance or loses track of teammates",
+  p:"Within the agreed distance all dive; locates teammates within a few seconds",
+  e:"Holds position through turns, tasks and limited visibility without prompting"}
+];
+// Planning, briefing and judgment items are graded on quality, not a number — no measurable standard.
+const STD_SKIP=/^(brief|conduct a briefing|complete a consistent pre-dive|present|produce|prepare|explain|show that|identify entry)|decision|considerations|apply existing|seizure|contingenc/i;
+const stdFor=text=>{ const t=txt(text); if(STD_SKIP.test(t)) return null; return STANDARDS.find(s=>s.rx.test(t))||null; };
+const STD_KEY=["","d","p","e"];
+// The target is never "Developing" (that describes a learner): Not yet/Developing aim for Performing, Performing aims for Excelling.
+const targetGrade=g=>(+g||0)<2?2:3;
+function stdLine(text,g){ const s=stdFor(text); if(!s) return ""; const t=targetGrade(g); return `${GRADES[t]}: ${s[STD_KEY[t]]}`; }
+function stdBlock(text,g){ const s=stdFor(text); if(!s) return "";
+  const next=targetGrade(g);
+  return `<details class="std"><summary>${(+g||0)>=3?"Standard met — review":`Target: <b>${GRADES[next]}</b> — ${esc(s[STD_KEY[next]])}`}</summary>
+    <div>${[1,2,3].map(v=>`<div class="${v<=(+g||0)?"met":""}"><b>${GRADES[v]}</b> — ${esc(s[STD_KEY[v]])}</div>`).join("")}</div></details>`; }
+
+function renderStage(){
+  const st=STAGES[S.stage-1], p=P(S.active,st.n), s=stageStatus(S.active,st.n);
+  const preList = st.pre.length ? st.pre.map(k=>{
+    const ok=stageStatus(S.active,k).complete;
+    return `<div class="chk"><span class="pill ${ok?"ok":"lock"}">${ok?"✓":"✗"}</span> Instar ${k}: ${STAGES[k-1].t}</div>`;
+  }).join("") : `<div class="muted">First instar — nothing comes before it.</div>`;
+  const preChecks = (PRE_CHECKS[st.n]||[]).map((c,i)=>`<label class="chk" style="text-transform:none;letter-spacing:0;color:var(--text)"><input type="checkbox" data-pre="${i}" ${p.pre[i]?"checked":""}> ${esc(c)}</label>`).join("");
+  const lim = p.lim;
+  // what's left
+  const left=[], tr=trackOf(p,st.n);
+  st.items.forEach(([concepts,gate],i)=>{
+    concepts.forEach((c,j)=>{ if(!inTrack(c,tr)) return; const k=i+"."+j, t=itemType(p,i,j,c);
+      if(t==="exp"&&!p.ex[k]) left.push(`Experience: ${txt(c)}`); if(t==="skill"&&(p.sk[k]?.g||0)<2) left.push(`Skill to Performing: ${txt(c)}`); });
+    if((p.gate[i]?.g||0)<3) left.push(`Gate to Excelling: ${PRINCIPLES[i]}`);
+  });
+  let html = `
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">Instar ${st.n} · ${st.t}</h2>
+      <span class="pill ${s.complete?"ok":""}">${s.complete?"Complete":Math.round(s.pct*100)+"%"}</span>
+    </div>
+    <p class="muted" style="margin:6px 0 0">${st.env} · <b style="color:var(--text)">${st.cfg}</b></p>
+    <p style="margin:8px 0 0">${st.purpose}</p>
+    ${st.n>=8?`<p class="muted" style="margin:6px 0 0;font-size:13px">Combined overhead curriculum: cave and wreck items are pursued together — each environment's skills strengthen the other.</p>`:""}
+    <div class="out three" style="margin-top:10px">
+      <div class="big"><div class="k">Experiences</div><div class="v">${s.ex}<small>/${s.exT}</small></div><div class="s">checked</div></div>
+      <div class="big"><div class="k">Supporting skills</div><div class="v">${s.sk}<small>/${s.skT}</small></div><div class="s">Performing or better</div></div>
+      <div class="big"><div class="k">Performance gates</div><div class="v" style="color:${s.gt===6?"var(--ok)":"inherit"}">${s.gt}<small>/6</small></div><div class="s">Excelling</div></div>
+    </div>
+    ${left.length&&!s.complete?`<details style="margin-top:8px"><summary>What's left (${left.length})</summary><ul style="margin:6px 0 0;padding-left:18px;font-size:13px">${left.map(l=>`<li>${esc(l)}</li>`).join("")}</ul></details>`:""}
+    ${!s.preStages?`<div class="alert">Earlier instar(s) not complete. Don't combine new environmental and equipment demands until each is developed independently.</div>`:""}
+  </div>
+  <div class="card">
+    <h2>Prerequisites</h2>
+    ${preList}
+    <h3>Readiness checklist</h3>
+    ${preChecks}
+    ${st.n>=2?credBlock(S.active):""}
+  </div>
+  <div class="card">
+    <h2>Limits</h2>
+    <ul style="margin:0 0 10px;padding-left:18px">${st.limits.filter(l=>inTrack(l,tr)).map(l=>`<li>${txt(l)}</li>`).join("")}</ul>
+    <div class="lim">
+      <div><label>My max depth (ft)</label><input type="number" data-lim="depth" value="${lim.depth??""}" placeholder="—"></div>
+      <div><label>My max run time (min)</label><input type="number" data-lim="time" value="${lim.time??""}" placeholder="—"></div>
+      <div><label>Min visibility (ft)</label><input type="number" data-lim="vis" value="${lim.vis??""}" placeholder="—"></div>
+      <div><label>Min water temp (°F)</label><input type="number" data-lim="temp" value="${lim.temp??""}" placeholder="—"></div>
+    </div>
+    <label style="margin-top:8px">Notes</label>
+    <input type="text" data-lim="notes" value="${esc(lim.notes??"")}" placeholder="Site, instructor, conditions…">
+  </div>
+  <div class="card">
+    <h2>Report card</h2>`;
+  st.items.forEach(([concepts,gate],i)=>{
+    const gr=p.gate[i], gg=gr?.g||0;
+    html += `<div class="pr"><h4>${PRINCIPLES[i]}</h4>`;
+    concepts.forEach((c,j)=>{
+      if(!inTrack(c,tr)) return;
+      const k=i+"."+j, t=itemType(p,i,j,c);
+      const et=ENV_TAG[envOf(c)], envTag = !et ? "" : `<span class="tag" style="cursor:default;border-color:${et[1]};color:${et[1]}">${et[0]}</span> `;
+      const tag=`<button class="tag" data-type="${k}" title="Switch tracking">${t==="exp"?"EXP":"SKILL"}</button>`;
+      if(t==="exp"){ const e=p.ex[k];
+        html += `<label class="rc"><span class="row" style="gap:8px;flex-wrap:nowrap"><input type="checkbox" data-ex="${k}" ${e?"checked":""}><span>${envTag}${esc(txt(c))}${e?` <span class="muted" style="font-size:11px">· ${e.d}</span>`:""}</span></span>${tag}</label>`;
+      } else { const r=p.sk[k], g=r?.g||0;
+        html += `<div class="rc"><span style="flex:1">${envTag}${esc(txt(c))}${hist(r)}${stdBlock(c,g)}</span><span class="row" style="gap:6px;flex-wrap:nowrap">${gradeSel(`data-sk="${k}"`,g)}${tag}</span></div>`;
+      }
+    });
+    html += `<div class="gate" style="border:1px solid ${gg>=3?"var(--ok)":"var(--line)"}"><div class="row" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap;gap:8px">
+        <div style="flex:1"><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Performance gate · needs Excelling</div><p style="margin:4px 0 0">${esc(gate)}</p>${hist(gr)}${stdBlock(gate,gg)}</div>
+        ${gradeSel(`data-gt="${i}"`,gg)}</div></div></div>`;
+  });
+  html += `</div>`;
+  $("#stageDetail").innerHTML = html;
+}
+$("#stageList").onclick=e=>{ const b=e.target.closest(".st"); if(!b)return; S.stage=+b.dataset.n; save(); renderTrain(); };
+function setGrade(obj,k,g,d){ const cur=obj[k]; if(cur&&cur.g===g) return; const rec=cur||{h:[]}; rec.g=g; rec.d=d||today(); rec.h=[...(rec.h||[]),{g,d:rec.d}].sort((a,b)=>a.d.localeCompare(b.d)); obj[k]=rec; }
+$("#stageDetail").addEventListener("click",e=>{
+  const p=P(S.active,S.stage);
+  const tg=e.target.closest("[data-type]");
+  if(tg){ e.preventDefault(); const k=tg.dataset.type, [i,j]=k.split(".").map(Number), c=STAGES[S.stage-1].items[i][0][j];
+    p.types[k] = itemType(p,i,j,c)==="exp" ? "skill" : "exp"; save(); renderTrain(); }
+});
+$("#stageDetail").addEventListener("change",e=>{
+  const p=P(S.active,S.stage), t=e.target;
+  if(t.dataset.pre!==undefined){ p.pre[t.dataset.pre]=t.checked; save(); return; }
+  if(t.dataset.cert){ ((S.certs??={})[S.active]??={})[t.dataset.cert]=t.value; save(); renderTrain(); renderPlan(); return; }
+  if(t.dataset.lim){ const k=t.dataset.lim; p.lim[k]= k==="notes"?t.value:(t.value===""?undefined:+t.value); save(); return; }
+  if(t.dataset.ex){ if(t.checked) p.ex[t.dataset.ex]={d:today()}; else delete p.ex[t.dataset.ex]; save(); renderTrain(); renderPlan(); return; }
+  if(t.dataset.sk){ setGrade(p.sk,t.dataset.sk,+t.value); save(); renderTrain(); renderPlan(); return; }
+  if(t.dataset.gt){ setGrade(p.gate,t.dataset.gt,+t.value); save(); renderTrain(); renderPlan(); return; }
+});
+$("#renameDiver").onclick=()=>{ const d=S.divers.find(x=>x.id===S.active); $("#renameIn").value=d.name; $("#renameBox").style.display="flex"; };
+$("#renameOk").onclick=()=>{ const v=$("#renameIn").value.trim(); if(v){ S.divers.find(x=>x.id===S.active).name=v; save(); } $("#renameBox").style.display="none"; renderTrain(); renderPlan(); renderLog(); };
+$("#addDiver").onclick=()=>{ const id="d"+Date.now(); S.divers.push({id,name:"Diver "+(S.divers.length+1)}); S.active=id; save(); renderTrain(); renderPlan(); renderLog(); };
+$("#exportBtn").onclick=()=>{ $("#io").style.display="block"; $("#io").value=JSON.stringify(S); };
+$("#copyBtn").onclick=async()=>{ try{ await navigator.clipboard.writeText(JSON.stringify(S)); $("#ioMsg").textContent="Copied."; }catch(e){ $("#io").style.display="block"; $("#io").value=JSON.stringify(S); $("#io").select(); $("#ioMsg").textContent="Copy blocked — select the text below."; } };
+$("#importBtn").onclick=()=>{
+  const box=$("#io");
+  if(box.style.display!=="block"){ box.style.display="block"; box.value=""; $("#ioMsg").textContent="Paste backup text, then press Restore again."; return; }
+  try{ const o=JSON.parse(box.value); if(!o.prog||!o.divers) throw 0; S=Object.assign(structuredClone(DEFAULT),o); S.gas=Object.assign(structuredClone(DEFAULT.gas),o.gas||{}); if(!Array.isArray(S.log)) S.log=[]; if(!Array.isArray(S.plans)) S.plans=[]; ensurePlan(); save(); renderLog(); blankForm(); renderGas(); renderTrain(); $("#ioMsg").textContent="Restored."; }
+  catch(e){ $("#ioMsg").textContent="That doesn't look like a valid backup."; }
+};
+
+
+/* ---------------- DIVE LOG ---------------- */
+const EXPOSURE = ["None / rash guard","3 mm wetsuit","5 mm wetsuit","7 mm wetsuit","7/8/9 semi-dry","Drysuit – light undergarment","Drysuit – heavy undergarment","Other"];
+let editId = null;
+function logCalc(d){
+  const t = TANKS.find(x=>x.id===d.tank) || TANKS[2];
+  const tk = t.id==="custom" ? {cap:+d.cCap, rated:+d.cRated, n:+d.cCount} : t;
+  const tf = tk.n*tk.cap/(tk.rated/100);
+  const used = (+d.start||0) - (+d.end||0);
+  const W = +d.water || 33;
+  const depth = +d.avgD || +d.maxD || 0;
+  const time = +d.time || 0;
+  if(!(used>0 && depth>0 && time>0 && tf>0)) return null;
+  const cf = used/100*tf;
+  const ata = depth/W + 1;
+  const sac = cf/(time*ata);
+  return {tf, used, cf, ata, sac, sacPsi: used/(time*ata), psiMinDepth: used/time, usedAvg: !!(+d.avgD)};
+}
+function loggedSac(diver, filter){
+  const xs = S.log.filter(d=>d.diver===diver && (!filter||filter(d))).map(d=>logCalc(d)).filter(c=>c && c.usedAvg);
+  if(!xs.length) return null;
+  const avg = xs.reduce((a,c)=>a+c.sac,0)/xs.length;
+  return {n:xs.length, avg: Math.round(avg*100)/100, max: Math.max(...xs.map(c=>c.sac))};
+}
+function formData(){
+  const o={}; new FormData($("#logForm")).forEach((v,k)=>o[k]=v); return o;
+}
+let logCredits=[];   // [{stage,key,kind,g,done}] for the entry being edited
+const AAR_FIELDS=["planD","planT","planTurn","planObj","aarActual","aarWhy","aarSustain","aarImprove","incNotes","workload","stress","thermal","narc","siteNotes","gearNotes","nextFocus","research"];
+const INCS={inc_freeflow:"Free-flow",inc_leak:"Leak",inc_buoy:"Buoyancy",inc_sep:"Separation",inc_share:"Gas sharing",inc_lowgas:"Below turn/RB",inc_limit:"Exceeded limit",inc_ears:"Ears/sinus",inc_thermal:"Thermal",inc_gear:"Gear"};
+function fillForm(d){
+  const f=$("#logForm");
+  [...f.elements].forEach(el=>{ if(!el.name) return; if(el.type==="checkbox") el.checked=!!d[el.name]; else if(d[el.name]!==undefined) el.value=d[el.name]; else if(AAR_FIELDS.includes(el.name)) el.value=""; });
+  logCredits = structuredClone(d.credits||[]);
+  $("#lCustom").style.display = f.elements.tank.value==="custom"?"grid":"none";
+  renderLogCalc(); renderCredits(); renderAarAux();
+}
+function itemText(stage,key){ const st=STAGES[stage-1]; if(!st) return ""; const [a,b]=key.split("."); return a==="g" ? st.items[+b][1] : st.items[+a]?.[0][+b]||""; }
+function itemKind(diver,stage,key){ if(key.startsWith("g.")) return "gate"; const [i,j]=key.split(".").map(Number); return itemType(P_(diver,stage),i,j,itemText(stage,key)); }
+function curGrade(diver,stage,key){ const p=P_(diver,stage), k=itemKind(diver,stage,key);
+  return k==="exp" ? (p.ex[key]?1:0) : k==="gate" ? (p.gate[key.slice(2)]?.g||0) : (p.sk[key]?.g||0); }
+function renderCredits(){
+  const d=formData(), n=+d.stage, box=$("#lCredit"); if(!box) return;
+  if(!n){ box.innerHTML=`<div class="muted" style="font-size:13px">Select the instar above to credit skills and experiences.</div>`; return; }
+  logCredits=logCredits.filter(c=>c.stage===n);
+  const st=STAGES[n-1], diver=d.diver;
+  const rows=logCredits.map((c,ix)=>{ const k=c.kind, now=curGrade(diver,n,c.key);
+    const ctl = k==="exp" ? `<label class="chip"><input type="checkbox" data-cr="${ix}" ${c.done?"checked":""}> Done</label>`
+      : `<select class="gsel g${c.g||0}" data-cr="${ix}">${GRADES.map((l,v)=>`<option value="${v}" ${v===(c.g||0)?"selected":""}>${l}</option>`).join("")}</select>`;
+    return `<div class="rc"><span style="flex:1"><span class="tag" style="cursor:default">${k==="gate"?"GATE":k==="exp"?"EXP":"SKILL"}</span> ${esc(txt(itemText(n,c.key)))}
+      <div class="muted" style="font-size:11px">${PRINCIPLES[+c.key.split(".")[c.key.startsWith("g.")?1:0]]} · report card now: ${k==="exp"?(now?"done":"not done"):GRADES[now]}</div>
+      ${k!=="exp"&&stdFor(itemText(n,c.key))&&+c.g>0?`<div style="font-size:11px;color:var(--accent)">${GRADES[+c.g]} means: ${esc(stdFor(itemText(n,c.key))[STD_KEY[+c.g]])}</div>`:""}</span>
+      <span class="row" style="gap:6px;flex-wrap:nowrap">${ctl}<button type="button" class="btn sm bad" data-crrm="${ix}">✕</button></span></div>`; }).join("");
+  const opts=PRINCIPLES.map((pr,i)=>{ const keys=[...st.items[i][0].map((_,j)=>`${i}.${j}`),`g.${i}`].filter(k=>!logCredits.some(c=>c.key===k));
+    return `<optgroup label="${pr}">${keys.map(k=>`<option value="${k}">${k.startsWith("g.")?"GATE":itemKind(diver,n,k)==="exp"?"EXP":"SKILL"} · ${esc(txt(itemText(n,k)).slice(0,70))}</option>`).join("")}</optgroup>`; }).join("");
+  const planHas = PL().obj?.some(o=>o.stage===n && !logCredits.some(c=>c.key===o.key));
+  box.innerHTML = `${rows||`<div class="muted" style="font-size:13px">Nothing credited yet.</div>`}
+    <div class="row" style="margin-top:8px;flex-wrap:nowrap;gap:6px"><select id="lCrAdd" style="flex:1"><option value="">Add from Instar ${n} report card…</option>${opts}</select>
+    ${planHas?`<button type="button" class="btn sm" id="lCrPlan">+ Plan objectives</button>`:""}</div>`;
+}
+function addCredit(key,stage,diver){ const k=itemKind(diver,stage,key), now=curGrade(diver,stage,key);
+  logCredits.push({stage,key,kind:k,g:k==="exp"?undefined:Math.max(now,1),done:k==="exp"?true:undefined}); }
+function applyCredits(entry){
+  (entry.credits||[]).forEach(c=>{ const p=P_(entry.diver,c.stage);
+    if(c.kind==="exp"){ if(c.done && !p.ex[c.key]) p.ex[c.key]={d:entry.date||today()}; }
+    else if(c.kind==="gate") setGrade(p.gate,c.key.slice(2),+c.g||0,entry.date);
+    else setGrade(p.sk,c.key,+c.g||0,entry.date); });
+}
+// Study prompts derived from what happened
+const STUDY={inc_freeflow:"Regulator free-flow response and valve-shutdown sequence",inc_leak:"Leak diagnosis: which components, which failures are fixable in water",
+  inc_buoy:"Weighting check, gas management in wing/suit, trim under task load",inc_sep:"Lost-buddy procedure and team positioning — what broke the contact?",
+  inc_share:"Gas-sharing sequence and whether rock bottom held up in practice",inc_lowgas:"Your measured SAC vs plan; turn pressure and rock-bottom assumptions",
+  inc_limit:"Depth/time discipline and the contingency schedules for this profile",inc_ears:"Equalization technique and descent rate; when to abort",
+  inc_thermal:"Exposure protection and thermal limits for this water",inc_gear:"Equipment retention, clipping and pre-dive checks"};
+function renderAarAux(){
+  const d=formData();
+  // plan vs actual
+  const c=logCalc(d), diffs=[];
+  if(+d.planD && +d.maxD){ const dd=+d.maxD-+d.planD; diffs.push(`<span class="pill ${dd>0?"lock":"ok"}">Depth ${dd>0?"+":""}${dd} ft vs plan</span>`); }
+  if(+d.planT && +d.time){ const dt=+d.time-+d.planT; diffs.push(`<span class="pill ${dt>5?"warn":""}">Time ${dt>0?"+":""}${dt} min vs bottom-time plan</span>`); }
+  if(+d.planTurn && +d.end){ const g=+d.end-+d.planTurn; diffs.push(`<span class="pill ${g<0?"lock":"ok"}">Surfaced ${Math.abs(g)} psi ${g<0?"below":"above"} turn</span>`); }
+  if(c){ const sacs=(PL().team||[]).find(m=>m.diver===d.diver)?.sac; if(sacs) diffs.push(`<span class="pill ${c.sac>sacs*1.15?"warn":""}">SAC ${c.sac.toFixed(2)} vs planned ${(+sacs).toFixed(2)}</span>`); }
+  $("#lDiff").innerHTML = diffs.length?`<div class="row" style="gap:6px;margin-bottom:8px">${diffs.join("")}</div>`:"";
+  // learn more
+  const items=[];
+  Object.keys(STUDY).forEach(k=>{ if(d[k]) items.push(STUDY[k]); });
+  if(+d.planD && +d.maxD>+d.planD && !d.inc_limit) items.push(STUDY.inc_limit);
+  logCredits.filter(c=>c.kind!=="exp" && +c.g===1).forEach(c=>items.push(`Developing: ${txt(itemText(c.stage,c.key))} — review the technique and set a drill for next dive`));
+  if(+d.stress>=4) items.push("Stress response: what triggered it, and which earlier cue could have prevented it?");
+  if(+d.workload>=4) items.push("Task loading: what could be simplified, pre-rigged or delegated within the team?");
+  $("#lLearn").innerHTML = items.length?`<div class="gate" style="padding:8px"><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Suggested study from this dive</div><ul style="margin:4px 0 0;padding-left:18px;font-size:13px">${[...new Set(items)].map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`:`<div class="muted" style="font-size:13px">Study suggestions appear here from issues, ratings and skills still Developing.</div>`;
+}
+function blankForm(diver){
+  diver = diver || S.active;
+  const last = [...S.log].reverse().find(d=>d.diver===diver);
+  const base = {credits:[], date:today(), diver, site:"", water:"33", temp:"", vis:"", expo:EXPOSURE[2], expoNote:"", weight:"", tank:(S.plan?.team?.[0]?.tank)||"al80", o2:21,
+    cCap:S.plan?.cCap??80, cRated:S.plan?.cRated??3000, cCount:S.plan?.cCount??1, start:"", end:"", maxD:"", avgD:"", time:"", stage:""};
+  if(last) ["site","water","expo","expoNote","weight","tank","o2","cCap","cRated","cCount"].forEach(k=>base[k]=last[k]);
+  editId=null; $("#logFormTitle").textContent="Log a dive"; $("#logSave").textContent="Save dive";
+  fillForm(base);
+}
+function renderLogCalc(){
+  const c=logCalc(formData());
+  $("#lCalc").innerHTML = c ? `
+    <div class="k">Calculated consumption</div>
+    <div class="v">${c.sac.toFixed(2)} <small>cu ft/min SAC</small></div>
+    <div class="s">Used ${f0(c.used)} psi = ${f1(c.cf)} cu ft · ${f0(c.sacPsi)} psi/min at surface in this tank · ${f0(c.psiMinDepth)} psi/min at depth</div>
+    ${c.usedAvg?"":`<div class="alert">No average depth entered — calculated from max depth, which <b>understates</b> SAC. Enter your computer's average depth for an accurate number.</div>`}
+    <div class="math">${f1(c.cf)} cf ÷ (${formData().time} min × ${f3(c.ata)} ATA) = ${c.sac.toFixed(3)} cfm</div>`
+  : `<div class="k">Calculated consumption</div><div class="s">Enter start/end pressure, depth and dive time.</div>`;
+}
+function renderLog(){
+  const opt=(arr,cur)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${String(v)===String(cur)?"selected":""}>${esc(l)}</option>`).join("");
+  const f=$("#logForm"), cur=formData();
+  $("#lDiver").innerHTML = opt(S.divers.map(d=>[d.id,d.name]), cur.diver||S.active);
+  $("#lExpo").innerHTML = opt(EXPOSURE.map(e=>[e,e]), cur.expo||EXPOSURE[2]);
+  $("#lTank").innerHTML = opt(TANKS.map(t=>[t.id,t.name]), cur.tank||"al80");
+  $("#lStage").innerHTML = `<option value="">—</option>`+opt(STAGES.map(s=>[s.n,`${s.n}. ${s.t}`]), cur.stage);
+  // summary
+  let sum = `<h2>Consumption summary</h2>`;
+  S.divers.forEach(dv=>{
+    const all = loggedSac(dv.id); const nDives = S.log.filter(d=>d.diver===dv.id).length;
+    sum += `<h3>${esc(dv.name)} <span class="muted">· ${nDives} dive${nDives===1?"":"s"}</span></h3>`;
+    if(!all){ sum += `<div class="muted">No dives with average depth logged yet.</div>`; return; }
+    sum += `<div class="row"><span class="pill ok">Avg SAC ${all.avg.toFixed(2)}</span><span class="pill">Highest ${all.max.toFixed(2)}</span><span class="pill">${all.n} dive${all.n===1?"":"s"} counted</span></div>`;
+    const rows = EXPOSURE.map(e=>[e, loggedSac(dv.id, d=>d.expo===e)]).filter(x=>x[1]);
+    if(rows.length>1) sum += `<div class="muted" style="margin-top:6px">${rows.map(([e,r])=>`${esc(e)}: <b style="color:var(--text)">${r.avg.toFixed(2)}</b> (${r.n})`).join(" · ")}</div>`;
+  });
+  sum += `<p class="muted" style="margin:8px 0 0">Only dives with an average depth count toward averages. The dive plan offers each diver's logged average as a SAC option.</p>`;
+  $("#logSummary").innerHTML = sum;
+  // list
+  const list = [...S.log].sort((a,b)=>(b.date||"").localeCompare(a.date||"") || b.id-a.id);
+  $("#logList").innerHTML = list.length ? list.map(d=>{
+    const c=logCalc(d), dv=S.divers.find(x=>x.id===d.diver), t=TANKS.find(x=>x.id===d.tank);
+    const gas = +d.o2>21 ? `EAN${d.o2}` : "Air";
+    return `<div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div><b>${esc(d.date||"")}</b> · ${esc(d.site||"No site")} <span class="muted">· ${esc(dv?dv.name:"?")}</span></div>
+        <div class="row"><button class="btn sm" data-edit="${d.id}">Edit</button><button class="btn sm bad" data-delrow="${d.id}">Delete</button></div>
+      </div>
+      <div class="muted" style="margin-top:6px">${d.maxD||"—"} ft max${d.avgD?` / ${d.avgD} ft avg`:""} · ${d.time||"—"} min · ${d.water==="34"?"Fresh":"Salt"}${d.temp?` · ${d.temp}°F`:""}${d.vis?` · vis ${d.vis} ft`:""}</div>
+      <div class="muted">${esc(t?t.name:"")} ${gas} · ${d.start||"—"} → ${d.end||"—"} psi · ${esc(d.expo||"")}${d.expoNote?` (${esc(d.expoNote)})`:""}${d.weight?` · ${d.weight} lb`:""}${d.stage?` · Instar ${d.stage}`:""}</div>
+      ${c?`<div style="margin-top:6px"><span class="pill ${c.usedAvg?"ok":"warn"}">SAC ${c.sac.toFixed(2)} cfm${c.usedAvg?"":" (max depth)"}</span> <span class="muted">${f1(c.cf)} cu ft used</span></div>`:""}
+      ${d.notes?`<div style="margin-top:6px;font-size:14px">${esc(d.notes)}</div>`:""}
+      ${(d.credits||[]).length?`<div class="row" style="gap:4px;margin-top:6px">${d.credits.map(c=>`<span class="pill ${c.kind==="exp"||+c.g>=3?"ok":+c.g===2?"":"warn"}" title="${esc(txt(itemText(c.stage,c.key)))}">${esc(txt(itemText(c.stage,c.key)).slice(0,28))}${c.kind==="exp"?" ✓":" · "+GRADES[+c.g||0]}</span>`).join("")}</div>`:""}
+      ${Object.keys(INCS).some(k=>d[k])?`<div class="row" style="gap:4px;margin-top:6px">${Object.entries(INCS).filter(([k])=>d[k]).map(([,l])=>`<span class="pill lock">${l}</span>`).join("")}</div>`:""}
+      ${d.aarSustain||d.aarImprove?`<div style="margin-top:6px;font-size:13px">${d.aarSustain?`<div><b style="color:var(--ok)">Sustain:</b> ${esc(d.aarSustain)}</div>`:""}${d.aarImprove?`<div><b style="color:var(--warn)">Improve:</b> ${esc(d.aarImprove)}</div>`:""}</div>`:""}
+      ${d.nextFocus?`<div class="muted" style="margin-top:4px;font-size:13px">Next focus: ${esc(d.nextFocus)}</div>`:""}
+      ${d.aarActual||d.aarWhy||d.siteNotes||d.research||d.gearNotes?`<details style="margin-top:6px"><summary>Full review</summary><div style="font-size:13px;margin-top:4px">
+        ${d.planObj?`<p><b>Planned:</b> ${esc(d.planObj)}</p>`:""}${d.aarActual?`<p><b>Happened:</b> ${esc(d.aarActual)}</p>`:""}${d.aarWhy?`<p><b>Why:</b> ${esc(d.aarWhy)}</p>`:""}
+        ${d.incNotes?`<p><b>Issues:</b> ${esc(d.incNotes)}</p>`:""}${d.siteNotes?`<p><b>Site:</b> ${esc(d.siteNotes)}</p>`:""}${d.gearNotes?`<p><b>Gear:</b> ${esc(d.gearNotes)}</p>`:""}${d.research?`<p><b>Research:</b> ${esc(d.research)}</p>`:""}
+        ${d.workload||d.stress||d.thermal||d.narc?`<p class="muted">Workload ${d.workload||"—"} · Stress ${d.stress||"—"} · Thermal ${d.thermal||"—"} · Narcosis ${d.narc||"—"}</p>`:""}</div></details>`:""}
+    </div>`;
+  }).join("") : `<div class="card muted">No dives logged yet.</div>`;
+}
+$("#logForm").addEventListener("input", e=>{
+  const t=e.target;
+  if(t.name==="tank") $("#lCustom").style.display = t.value==="custom"?"grid":"none";
+  if(t.dataset.cr!==undefined){ const c=logCredits[+t.dataset.cr]; if(c.kind==="exp") c.done=t.checked; else { c.g=+t.value; t.className=`gsel g${c.g}`; } renderAarAux(); return; }
+  if(t.id==="lCrAdd"){ if(t.value){ const d=formData(); addCredit(t.value,+d.stage,d.diver); renderCredits(); renderAarAux(); } return; }
+  if(t.name==="stage"||t.name==="diver") renderCredits();
+  renderLogCalc(); renderAarAux();
+});
+$("#logForm").addEventListener("click", e=>{
+  const rm=e.target.closest("[data-crrm]"); if(rm){ logCredits.splice(+rm.dataset.crrm,1); renderCredits(); renderAarAux(); return; }
+  if(e.target.id==="lCrPlan"){ const d=formData(); (PL().obj||[]).filter(o=>o.stage===+d.stage && !logCredits.some(c=>c.key===o.key)).forEach(o=>addCredit(o.key,+d.stage,d.diver)); renderCredits(); renderAarAux(); }
+});
+$("#lDiver").addEventListener("change", e=>{ if(!editId){ const keep=formData(), cr=logCredits; blankForm(e.target.value); fillForm({...formData(),...Object.fromEntries(["date","start","end","maxD","avgD","time","temp","vis","stage",...AAR_FIELDS].map(k=>[k,keep[k]])),diver:e.target.value,credits:cr}); } });
+$("#logForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const d=formData();
+  if(!(+d.start>0 && d.end!=="" && +d.end>=0 && +d.maxD>0 && +d.time>0)){ $("#logMsg").textContent="Need start/end pressure, max depth and time."; return; }
+  if(+d.end>=+d.start){ $("#logMsg").textContent="End pressure must be below start pressure."; return; }
+  if(+d.avgD > +d.maxD){ $("#logMsg").textContent="Average depth can't exceed max depth."; return; }
+  const entry={...d,credits:logCredits.filter(c=>c.stage===+d.stage)};
+  if(editId){ const i=S.log.findIndex(x=>x.id===editId); S.log[i]={...entry,id:editId}; }
+  else S.log.push({...entry,id:Date.now()});
+  applyCredits(entry);
+  const nCr=entry.credits.length;
+  save();
+  const next = logQueue.shift();
+  if(next){ startLogFromPlan(next, entry); $("#logMsg").innerHTML=`Saved ${esc(diverName(d.diver))}${nCr?` · ${nCr} training credit${nCr>1?"s":""}`:""}. Now logging <b>${esc(diverName(next))}</b> — shared details carried over.`; }
+  else { blankForm(d.diver); $("#logMsg").textContent=`Dive ${editId?"updated":"saved"}${nCr?` · ${nCr} training credit${nCr>1?"s":""} applied to the report card`:""}.`; setTimeout(()=>$("#logMsg").textContent="",4000); }
+  renderLog(); renderGas(); renderTrain();
+});
+$("#logReset").onclick=()=>{ logQueue=[]; blankForm(); renderLog(); };
+let pendingDel=null;
+$("#logList").addEventListener("click", e=>{
+  const ed=e.target.closest("[data-edit]");
+  if(ed){ const d=S.log.find(x=>x.id==ed.dataset.edit); editId=d.id; renderLog(); fillForm(d);
+    $("#logFormTitle").textContent=`Editing ${d.date||"dive"}`; $("#logSave").textContent="Update dive";
+    $("#logForm").scrollIntoView({behavior:"smooth"}); return; }
+  const dl=e.target.closest("[data-delrow]");
+  if(dl){
+    if(pendingDel!==dl.dataset.delrow){ pendingDel=dl.dataset.delrow; dl.textContent="Tap again to delete"; return; }
+    S.log=S.log.filter(x=>x.id!=dl.dataset.delrow); pendingDel=null; if(editId==dl.dataset.delrow) blankForm(); save(); renderLog(); renderGas();
+  }
+});
+
+/* ---------------- DECOMPRESSION MODEL: Bühlmann ZHL-16C + gradient factors ---------------- */
+// Coefficients (bar): ZHL-16C as published by Bühlmann. Compartment 1 = "1b" (5 min N2).
+const ZHL = {
+  n2t:[5.0,8.0,12.5,18.5,27.0,38.3,54.3,77.0,109.0,146.0,187.0,239.0,305.0,390.0,498.0,635.0],
+  n2a:[1.1696,1.0,0.8618,0.7562,0.62,0.5043,0.441,0.4,0.375,0.35,0.3295,0.3065,0.2835,0.261,0.248,0.2327],
+  n2b:[0.5578,0.6514,0.7222,0.7825,0.8126,0.8434,0.8693,0.891,0.9092,0.9222,0.9319,0.9403,0.9477,0.9544,0.9602,0.9653],
+  het:[1.88,3.02,4.72,6.99,10.21,14.48,20.53,29.11,41.2,55.19,70.69,90.34,115.29,147.42,188.24,240.03],
+  hea:[1.6189,1.383,1.1919,1.0458,0.922,0.8205,0.7305,0.6502,0.595,0.5545,0.5333,0.5189,0.5181,0.5176,0.5172,0.5119],
+  heb:[0.477,0.5747,0.6527,0.7223,0.7582,0.7957,0.8279,0.8553,0.8757,0.8903,0.8997,0.9073,0.9122,0.9171,0.9217,0.9267]
+};
+const PWV=0.0627, SURF=1.01325;
+const pAmb=(ft,W)=>SURF*(ft/W+1);
+const tissInit=()=>({n:Array(16).fill((SURF-PWV)*0.7902), h:Array(16).fill(0)});
+const tissClone=T=>({n:T.n.slice(), h:T.h.slice()});
+function schreiner(p,P0,R,t,f,ht){ const k=Math.LN2/ht, Pi0=(P0-PWV)*f, Ri=R*f; return Pi0 + Ri*(t-1/k) - (Pi0 - p - Ri/k)*Math.exp(-k*t); }
+function tissSeg(T,d0,d1,t,g,W){
+  if(t<=0) return; const P0=pAmb(d0,W), R=(pAmb(d1,W)-P0)/t, fN=Math.max(0,1-g.o2-g.he), fH=g.he;
+  for(let i=0;i<16;i++){ T.n[i]=schreiner(T.n[i],P0,R,t,fN,ZHL.n2t[i]); T.h[i]=schreiner(T.h[i],P0,R,t,fH,ZHL.het[i]); }
+}
+function ceilFt(T,gf,W){
+  let m=0;
+  for(let i=0;i<16;i++){ const pn=T.n[i], ph=T.h[i], pt=pn+ph; if(pt<=0) continue;
+    const a=(ZHL.n2a[i]*pn+ZHL.hea[i]*ph)/pt, b=(ZHL.n2b[i]*pn+ZHL.heb[i]*ph)/pt;
+    m=Math.max(m,(pt-a*gf)/(gf/b+1-gf)); }
+  return (m/SURF-1)*W;
+}
+// Single-exposure CNS limits (min) by pO2
+const CNS_TBL=[[0.6,720],[0.7,570],[0.8,450],[0.9,360],[1.0,300],[1.1,240],[1.2,210],[1.3,180],[1.4,150],[1.5,120],[1.6,45]];
+function cnsLimit(p){ if(p<0.6) return Infinity; if(p>=1.6) return 45;
+  for(let i=1;i<CNS_TBL.length;i++){ const [p1,l1]=CNS_TBL[i-1],[p2,l2]=CNS_TBL[i]; if(p<=p2) return l1+(l2-l1)*(p-p1)/(p2-p1); } return 45; }
+const gasName=g=>{ const o=Math.round(g.o2*100), h=Math.round(g.he*100); return h>0?`${o}/${h}`: o>=100?"O₂": o===21?"Air":`EAN${o}`; };
+const switchDepth=(o2,W)=>Math.floor(((1.6/o2-1)*W+0.5)/10)*10;   // MOD at pO2 1.6, rounded to a 10-ft stop (0.5 ft tolerance)
+
+/* Simulate a square profile and its ascent. o = {depth, bt, bottom:{o2,he}, deco:[{o2,he,sw,key}], gfLo, gfHi, W, asc, desc, last} */
+function decoPlan(o){
+  const W=o.W, T=tissInit(), segs=[]; let rt=0;
+  const add=(d0,d1,t,g)=>{ if(t<=0) return; tissSeg(T,d0,d1,t,g,W); segs.push({d0,d1,t,g}); rt+=t; };
+  const descT=o.depth/o.desc;
+  add(0,o.depth,descT,o.bottom);
+  add(o.depth,o.depth,Math.max(0,o.bt-descT),o.bottom);
+  const gasAt=d=>{ let best=null; o.deco.forEach(g=>{ if(g.sw>=d-1e-9 && (!best||g.o2>best.o2)) best=g; }); return best; };
+  let cur=o.depth, g=o.bottom, first=null; const stops=[];
+  const gfAt=d=> first==null ? o.gfLo : o.gfHi+(o.gfLo-o.gfHi)*d/first;
+  // no-decompression test: direct ascent on bottom gas at GF high
+  const nd=tissClone(T); tissSeg(nd,cur,0,cur/o.asc,g,W);
+  if(ceilFt(nd,o.gfHi,W)<=0){ add(cur,0,cur/o.asc,g); return finish(true); }
+  // First stop: GF-low ceiling at the end of the bottom phase, rounded up to the stop increment (not shallower than the last stop)
+  first = Math.max(o.last, Math.ceil(ceilFt(T,o.gfLo,W)/10)*10);
+  if(first>=cur) first = cur%10 ? Math.floor(cur/10)*10 : cur;
+  let guard=0;
+  while(cur>0){
+    let next = cur%10 ? Math.floor(cur/10)*10 : cur-10;
+    if(next>0 && next<o.last) next=0;
+    let s = stops.length && stops[stops.length-1].d===cur ? stops[stops.length-1] : null;
+    if(cur%10===0){ const ng=gasAt(cur); if(ng && ng.o2>g.o2){ g=ng; if(!s){ s={d:cur,t:0,g,sw:true}; stops.push(s);} else { s.g=g; s.sw=true; } add(cur,cur,1,g); s.t+=1; } }
+    while(true){
+      const c=tissClone(T); tissSeg(c,cur,next,(cur-next)/o.asc,g,W);
+      if(cur>first) break;                         // still travelling to the first stop
+      if(ceilFt(c,gfAt(next),W) <= next+1e-6) break;
+      if(!s){ s={d:cur,t:0,g}; stops.push(s); }
+      add(cur,cur,1,g); s.t+=1;
+      if(++guard>2000) return {error:"Decompression exceeds 2000 minutes — profile is outside any sensible plan."};
+    }
+    add(cur,next,(cur-next)/o.asc,g); cur=next;
+  }
+  return finish(false);
+  function finish(noDeco){
+    const use={}; let cns=0, otu=0;
+    segs.forEach(sg=>{ const ata=((sg.d0+sg.d1)/2)/W+1, k=sg.g.key||"bottom"; use[k]=(use[k]||0)+ata*sg.t;
+      const po2=sg.g.o2*ata; cns+=sg.t/cnsLimit(po2)*100; if(po2>0.5) otu+=sg.t*Math.pow((po2-0.5)/0.5,0.8333); });
+    const decoT = stops.reduce((a,s)=>a+s.t,0);
+    return {noDeco, stops, first, rt, decoT, use, cns, otu, segs, tts: rt-o.bt};
+  }
+}
+/* Model NDL: longest bottom time (incl. descent) allowing a direct ascent within GF high */
+function modelNDL(depth,g,gfHi,W,asc,desc){
+  if(depth<=0) return Infinity;
+  const T=tissInit(), descT=depth/desc; tissSeg(T,0,depth,descT,g,W);
+  const ok=()=>{ const c=tissClone(T); tissSeg(c,depth,0,depth/asc,g,W); return ceilFt(c,gfHi,W)<=0; };
+  if(!ok()) return 0;
+  for(let t=1;t<=360;t++){ tissSeg(T,depth,depth,1,g,W); if(!ok()) return Math.floor(descT+t-1); }
+  return Infinity;
+}
+
+/* ---------------- DIVE PLAN ---------------- */
+// Air no-decompression limits (min); enter at depth equal to or next greater
+const AIR_NDL = [[20,Infinity],[25,595],[30,371],[35,232],[40,163],[45,125],[50,92],[55,74],[60,60],[70,48],[80,39],[90,30],[100,25],[110,20],[120,15]];
+function ndlFor(depthFt){ const r = AIR_NDL.find(([d])=>depthFt<=d); return r ? r : null; }
+const CONT_DEFAULT = {
+  lost:"Stop, look 360° and up for up to 1 min (light sweep if dark). If not found, make a safe ascent, deploy SMB and reunite at the surface.",
+  oog:"Out-of-gas diver signals; donor passes the long hose, switches to backup. Stabilize, thumb the dive, ascend together at the planned rate.",
+  fail:"Free-flow: breathe it or switch to backup, isolate if doubles. Inflator stuck: disconnect, orally inflate, end the dive.",
+  light:"Primary failure: switch to backup, signal team, end the dive. Two lights lost on team = end the dive.",
+  thermal:"Any diver too cold to handle equipment confidently ends the dive — signal and ascend as a team.",
+  abort:"Any diver can call the dive at any time for any reason. Turn pressure, NDL, or rock bottom reached = dive ends.",
+  emerg:"EMS 911 · DAN Emergency Hotline +1-919-684-9111 · Nearest chamber: ___ · O₂ kit location: ___"
+};
+const CONT_LABELS = {lost:"Lost buddy",oog:"Out of gas",fail:"Equipment failure",light:"Light failure",thermal:"Thermal",abort:"Abort / thumb criteria",emerg:"Emergency contacts"};
+const CHECKS = [
+  {g:"Team brief", team:true, items:["Goal and objectives agreed","Unified team: roles, order, signals","Equipment: configurations match","Exposure protection appropriate","Decompression: NDL, ascent rate, stops","Gas: mix, turn pressure, rock bottom","Environment: entry, exit, route, hazards"]},
+  {g:"Equipment", items:["Gas analyzed, labeled, MOD confirmed","Valve(s) fully open; SPG reads start pressure","Breathe primary & backup — SPG needle steady","Inflator (and drysuit) hose connected & tested","Weights secure and checked","Computer on; gas & settings correct","Lights charged and tested","SMB, spool & cutting tool stowed","Mask, backup mask, fins"]},
+  {g:"Deco gases", deco:true, items:["Each deco cylinder analyzed & MOD-labeled","Regulators breathed; valves set per team protocol","Switch depths briefed and confirmed with team"]},
+  {g:"In water", items:["Bubble check","S-drill / long-hose deployment","Valve drill (doubles only)","Descent check at 10–15 ft"]}
+];
+const PLAN_DEFAULT = ()=>({
+  date:today(), site:"", objective:"", stage:"", water:33, temp:"", vis:"", current:"None", light:"Day", entry:"", route:"",
+  depth:60, bt:40, o2:21, po2:1.4, dens:5.2, arate:10, stop:"3 min @ 15 ft",
+  rule:"all", stress:1, ptime:1, ss:0, cCap:80, cRated:3000, cCount:1,
+  team:[{diver:S.divers[0].id, tank:"al80", fill:3000, sac:0.5, expo:"5 mm wetsuit", weight:""}],
+  cont:{...CONT_DEFAULT}, checks:{}, ...ADV_DEFAULT()
+});
+function ADV_DEFAULT(){ return {adv:{tmx:false,dg:false,ds:false}, he:0, endLim:100, gfMode:"suggest", gfLo:50, gfHi:80, gff:{}, lastStop:20, desc:60, dg:[], dgRes:1.5, mixStd:"standard", venue:"open", obj:[]}; }
+function normalizePlan(p){ const d=ADV_DEFAULT(); for(const k in d) if(p[k]==null) p[k]=d[k]; p.adv={...d.adv,...p.adv}; if(p.dens==null) p.dens=5.2; if(!["standard","reduced"].includes(p.mixStd)) p.mixStd="standard"; if(!["suggest","shallow","conservative","custom"].includes(p.gfMode)) p.gfMode="suggest"; return p; }
+// migrate older single-tank gas settings into a plan
+function ensurePlan(){ if(S.plan) return;
+  const g=S.gas||{}; S.plan = PLAN_DEFAULT();
+  Object.assign(S.plan,{depth:g.depth??60, water:g.water??33, stress:g.stress??1, ptime:g.ptime??1, arate:g.arate??10, ss:g.ss?1:0, cCap:g.cCap??80, cRated:g.cRated??3000, cCount:g.cCount??1});
+  S.plan.team = [{diver:S.active, tank:g.tank||"al80", fill:g.fill||3000, sac:g.sacMe||0.5, expo:"5 mm wetsuit", weight:""}];
+  if(S.divers[1]) S.plan.team.push({diver:S.divers.find(d=>d.id!==S.active).id, tank:g.tank||"al80", fill:g.fill||3000, sac:g.sacBuddy||0.5, expo:"5 mm wetsuit", weight:""});
+}
+ensurePlan();
+if(!Array.isArray(S.plans)) S.plans=[];
+if(S.plan) normalizePlan(S.plan);
+const PL=()=>S.plan;
+const num=v=>+v;
+
+function tankOf(id){
+  const P=PL(); let t=TANKS.find(x=>x.id===id)||TANKS[2];
+  if(t.id==="custom") t={id:"custom",name:`Custom ${P.cCount>1?"double ":""}${P.cCap} cf`,cap:+P.cCap,rated:+P.cRated,n:+P.cCount};
+  return {...t, tf: t.n*t.cap/(t.rated/100)};
+}
+function diverName(id){ return (S.divers.find(d=>d.id===id)||{name:"?"}).name; }
+
+/* ---- Gradient factor selection ---- */
+const GF_FACTORS_MANUAL = {repet:"Repetitive dive today", work:"Heavy workload planned", fly:"Flying or driving to altitude after", unwell:"Fatigued, dehydrated or unwell"};
+function gfSelect(P){
+  const D=num(P.depth)||0, he=P.adv?.tmx?(num(P.he)||0):0;
+  const auto=[];
+  const cold = (num(P.temp)&&num(P.temp)<60) || P.team.some(m=>/semi-dry|Drysuit/.test(m.expo||""));
+  if(cold) auto.push("Cold water / thermal stress");
+  if(["Moderate","Strong"].includes(P.current)) auto.push(`${P.current} current (exertion)`);
+  if(D>100 || he>0) auto.push(he>0?"Trimix / deep exposure":"Depth beyond 100 ft");
+  if(P.adv?.ds && P.team.some(m=>!stageStatus(m.diver,7).complete)) auto.push("Team member hasn't completed Instar 7 (new to planned deco)");
+  const manual = Object.keys(GF_FACTORS_MANUAL).filter(k=>P.gff?.[k]).map(k=>GF_FACTORS_MANUAL[k]);
+  const factors=[...auto,...manual];
+  const mode=P.gfMode||"suggest";
+  let lo,hi,why;
+  if(mode==="conservative"){ lo=30; hi=70; why="Conservative program standard often required by institutional decompression programs. The most conservative preset here: deeper first stop and the longest shallow stops."; }
+  else if(mode==="shallow"){ lo=50; hi=80; why="Controlled trials of air decompression found that moving stop time from shallow to deep stops, with total time unchanged, increased DCS. A GF low of 50 avoids adding deep-stop time; GF high 80 keeps a surfacing margin below the raw Bühlmann limit."; }
+  else if(mode==="custom"){ lo=Math.min(100,Math.max(10,num(P.gfLo)||50)); hi=Math.min(100,Math.max(lo,num(P.gfHi)||80)); why="Custom values. GF low sets how deep the first stop is (lower = deeper); GF high sets the surfacing margin (lower = longer shallow stops)."; }
+  else { lo=50; hi=Math.max(65,80-5*factors.length);
+    why=`Starts from 50/80 (shallow-weighted, per deep-stop trial findings) and lowers GF high by 5 for each risk factor present (floor 65)${factors.length?"":" — none present"}. GF high is the lever because it lengthens the shallow stops, where the trial data favor spending extra time. The 5-point step is a planning convention, not a validated dose-response.`; }
+  return {lo,hi,why,factors,auto,mode};
+}
+
+function planCalc(){
+  const P=PL(), D=num(P.depth)||0, W=num(P.water)||33;
+  const fhe = P.adv?.tmx ? Math.min(0.9,Math.max(0,(num(P.he)||0)/100)) : 0;
+  const fo2 = Math.min(1-fhe, Math.max(0.05,(num(P.o2)||21)/100)), fn2=Math.max(0,1-fo2-fhe);
+  const ata=D/W+1, po2=fo2*ata, mod=(num(P.po2)/fo2-1)*W;
+  // Gas density (g/L) at 0 °C, 1 atm, ideal gas: O2 1.429, N2 1.251, He 0.179
+  const densLim = num(P.dens)||5.2;
+  const rho0 = fo2*1.429 + fn2*1.251 + fhe*0.179, rho = rho0*ata, densMax = (densLim/rho0 - 1)*W;
+  const rhoHard = 6.2, densHardMax = (rhoHard/rho0 - 1)*W;
+  const endFt = (D+W)*(1-fhe) - W;                       // END with O2 counted as narcotic
+  const minOD = Math.max(0,(0.16/fo2-1)*W);
+  const ead = fhe>0 ? null : (fo2>0.21 ? (D+W)*fn2/0.79 - W : D);
+  const ndlRow = ead==null ? null : ndlFor(Math.max(0,Math.ceil(ead)));
+  const gf = gfSelect(P);
+  const asc=num(P.arate)||10, desc=num(P.desc)||60;
+  const bottom={o2:fo2,he:fhe,key:"bottom"};
+  const mNDL = modelNDL(D,bottom,gf.hi/100,W,asc,desc);
+  // deco gases
+  const dgs = P.adv?.dg ? (P.dg||[]).map((g,i)=>{ const o2=Math.min(1,(num(g.o2)||50)/100), he=Math.min(1-o2,(num(g.he)||0)/100);
+      return {i,o2,he,key:"dg"+i,sw:switchDepth(o2,W),mod16:(1.6/o2-1)*W,tk:tankOf(g.tank||"al40"),fill:num(g.fill)||0,name:gasName({o2,he})}; }) : [];
+  const usableDgs = dgs.filter(g=>g.sw>0 && g.sw<D);
+  const modelOpts = (depth,bt)=>({depth,bt,bottom,deco:usableDgs,gfLo:gf.lo/100,gfHi:gf.hi/100,W,asc,desc,last:num(P.lastStop)||20});
+  const sched = P.adv?.ds && D>0 && num(P.bt)>0 ? decoPlan(modelOpts(D,num(P.bt))) : null;
+  // rock-bottom target: first gas switch if deco gas carried, else surface; plus any required stops breathed on bottom gas
+  const rbTarget = usableDgs.length ? Math.max(...usableDgs.map(g=>g.sw)) : 0;
+  const bgStops = sched && !sched.error ? sched.stops.filter(s=>s.g.key==="bottom" && s.d>rbTarget) : [];
+  const bgStopAtaMin = bgStops.reduce((a,s)=>a+s.t*(s.d/W+1),0);
+  const ascMin=(D-rbTarget)/asc, ascAvgAta=((D+rbTarget)/2)/W+1;
+  const sacs=P.team.map(m=>num(m.sac));
+  const members = P.team.map((m,i)=>{
+    const tk=tankOf(m.tank), fill=num(m.fill)||0, sac=num(m.sac);
+    const otherMax = sacs.length>1 ? Math.max(...sacs.filter((_,j)=>j!==i)) : sac;
+    const team = num(P.stress)===0 ? 2*(sac+otherMax) : 2*num(P.stress);
+    const rbDepth=team*num(P.ptime)*ata, rbAsc=team*ascMin*ascAvgAta, rbBgStops=team*bgStopAtaMin;
+    const rbStop=(num(P.ss)&&!rbTarget&&!bgStops.length)?team*3*(15/W+1):0;
+    const rb_cf=rbDepth+rbAsc+rbBgStops+rbStop, rb_raw=rb_cf/tk.tf*100, rb=Math.ceil(rb_raw/100)*100;
+    const five_cf=sac*ata*5, five_raw=five_cf/tk.tf*100, five=Math.ceil(five_raw/100)*100;
+    const usable=Math.max(0,Math.floor((fill-rb)/100)*100), usable_cf=usable/100*tk.tf;
+    // planned use from the model profile (only with a schedule)
+    let planBg=null, dgNeed=[];
+    if(sched && !sched.error){
+      planBg = Math.ceil((sac*(sched.use.bottom||0))/tk.tf*100/100)*100;
+      dgNeed = usableDgs.map(g=>{ const cf=sac*(sched.use[g.key]||0)*(num(P.dgRes)||1.5); const psi=Math.ceil(cf/g.tk.tf*100/100)*100; return {g,cf,psi,ok:psi<=g.fill}; });
+    }
+    return {m,i,tk,fill,sac,team,rbDepth,rbAsc,rbBgStops,rbStop,rb_cf,rb_raw,rb,five_cf,five_raw,five,usable,usable_cf,planBg,dgNeed};
+  });
+  const frac = P.rule==="half"?1/2 : P.rule==="thirds"?1/3 : 1;
+  const limUse = members.length ? Math.min(...members.map(x=>x.usable_cf)) : 0;
+  const limiter = members.find(x=>x.usable_cf===limUse);
+  const allow_cf = limUse*frac;
+  members.forEach(x=>{
+    if(P.rule==="all"){ x.turn=x.rb; x.allow_psi=x.fill-x.rb; }
+    else { x.allow_psi_raw=allow_cf/x.tk.tf*100; x.turn=Math.ceil((x.fill-x.allow_psi_raw)/100)*100; x.allow_psi=x.fill-x.turn; }
+    x.allowCfActual = x.allow_psi/100*x.tk.tf;
+    x.gasMin = x.sac>0 ? Math.max(0,x.allowCfActual/(x.sac*ata)) : 0;
+  });
+  const gasMin = members.length ? Math.min(...members.map(x=>x.gasMin)) : 0;
+  const tblNdl = ndlRow ? ndlRow[1] : null;
+  const ndl = P.adv?.ds ? null : (tblNdl==null ? mNDL : Math.min(tblNdl, mNDL));
+  const limits = [["Gas",gasMin],["Planned",num(P.bt)||Infinity]]; if(ndl!=null) limits.push(["NDL",ndl]);
+  const lim = limits.reduce((a,b)=>b[1]<a[1]?b:a);
+  // contingency schedules (all levels): deeper, longer, user excursion
+  const bt=num(P.bt)||0;
+  const cont = D>0 && bt>0 ? [["As planned (reference)",D,bt],["5 min longer",D,bt+5],["10 min longer",D,bt+10],["20 ft deeper",D+20,bt]].map(([lab,d,t])=>{
+    const s=decoPlan(modelOpts(d,t)); if(s.error) return {lab,d,t,err:s.error};
+    const ata_d=d/W+1;
+    const bgUse = members.map(x=>({x, psi: Math.ceil(x.sac*(s.use.bottom||0)/x.tk.tf*100/100)*100}));
+    const worst = bgUse.reduce((a,b)=>(b.x.fill-b.psi)<(a.x.fill-a.psi)?b:a, bgUse[0]);
+    return {lab,d,t,s,ratio: s.decoT/t, bgUse, worst, mod:d>(num(P.po2)/fo2-1)*W, dens:rho0*ata_d};
+  }) : [];
+  return {P,D,W,fo2,fhe,fn2,ata,po2,mod,densLim,rho0,rho,densMax,densHardMax,endFt,minOD,ead,ndlRow,tblNdl,mNDL,ndl,gf,asc,desc,
+    dgs,usableDgs,sched,rbTarget,bgStops,ascMin,ascAvgAta,members,frac,limUse,limiter,allow_cf,gasMin,lim,cont};
+}
+// Standard bottom-mix sets.
+// Reduced set: max O2 / min He at each MOD tier; working range = previous tier's MOD to this MOD.
+// Standard set: eight bottom mixes with planned working depths.
+const STD_SETS={
+ reduced:{label:"Reduced set — 4 bottom mixes", mixes:[
+  {o2:32,he:0, lo:0,  hi:100},
+  {o2:18,he:45,lo:100,hi:190},
+  {o2:16,he:60,lo:190,hi:240},
+  {o2:10,he:85,lo:240,hi:300}]},
+ standard:{label:"Standard set — 8 bottom mixes", mixes:null}};
+const STD_MIXES=[
+  {o2:21,he:0, lo:0,  hi:100},
+  {o2:32,he:0, lo:0,  hi:100},
+  {o2:25,he:25,lo:100,hi:130},
+  {o2:21,he:35,lo:130,hi:160},
+  {o2:18,he:45,lo:160,hi:200},
+  {o2:15,he:55,lo:200,hi:240},
+  {o2:12,he:60,lo:250,hi:300},
+  {o2:10,he:70,lo:300,hi:400}];
+STD_SETS.standard.mixes=STD_MIXES;
+const STD_DECO=[{o2:50,he:0},{o2:100,he:0},{o2:35,he:25},{o2:21,he:35}];
+function evalMixes(P){
+  const D=num(P.depth)||0, W=num(P.water)||33, endLim=num(P.endLim)||100, dens=num(P.dens)||5.2, po2max=num(P.po2)||1.4, CD=D+20;
+  const set=STD_SETS[P.mixStd]||STD_SETS.standard;
+  const at=(m,d)=>{ const fo2=m.o2/100, fhe=m.he/100, fn2=1-fo2-fhe, ata=d/W+1;
+    return {po2:fo2*ata, end:(d+W)*(1-fhe)-W, rho:(fo2*1.429+fn2*1.251+fhe*0.179)*ata}; };
+  const rows=set.mixes.map(m=>{
+    const p=at(m,D), c=at(m,CD), fo2=m.o2/100;
+    const fails=[]; if(p.po2>po2max+1e-9) fails.push("pO₂"); if(p.end>endLim+1e-9) fails.push("END"); if(p.rho>dens+1e-9) fails.push("density");
+    // contingency (+20 ft, unplanned): working pO₂ limit (toxicity is abrupt) and the 6.2 g/L absolute density maximum (CO₂).
+    // END is not applied — narcosis is progressive and reversed by ascending, which the contingency already requires.
+    const cfails=[]; if(c.po2>po2max+1e-9) cfails.push(`pO₂ ${c.po2.toFixed(2)}`); if(c.rho>6.2+1e-9) cfails.push(`${c.rho.toFixed(1)} g/L`);
+    return {...m, name:gasName({o2:fo2,he:m.he/100}), ...p, c, minOD:Math.max(0,(0.16/fo2-1)*W), fails, cfails, ok:!fails.length, cok:!cfails.length, inRange:D>=m.lo&&D<=m.hi};
+  });
+  // Narrow: passing mixes, least helium first (then most O2 for better decompression)
+  const pass=rows.filter(r=>r.ok).sort((a,b)=>a.he-b.he||b.o2-a.o2);
+  const rec = pass.find(r=>r.cok) || null;                 // least helium that also survives the +20 ft contingency
+  const minimal = pass[0] && pass[0]!==rec ? pass[0] : null;   // planned depth only — fails the contingency
+  const nextTier = rec ? pass.find(r=>r.he>rec.he) || null : null;
+  const shortlist=[rec, minimal, !minimal?nextTier:null].filter(Boolean);
+  return {rows, rec, minimal, nextTier, shortlist, CD};
+}
+
+function sacOptions(diverId, cur){
+  const la=loggedSac(diverId);
+  const opts=[...SAC_OPTS.map(o=>[o.v,`${o.v.toFixed(2)} ${o.l}`])];
+  if(la) opts.push([la.avg,`${la.avg.toFixed(2)} Logged avg (${la.n})`]);
+  if(!opts.some(([v])=>Math.abs(v-cur)<1e-9)) opts.push([cur,`${(+cur).toFixed(2)} (previous)`]);
+  return opts.map(([v,l])=>`<option value="${v}" ${Math.abs(v-cur)<1e-9?"selected":""}>${l}</option>`).join("");
+}
+
+function renderPlan(){
+  const P=PL();
+  document.querySelectorAll("#v-plan [data-k]").forEach(el=>{ const v=P[el.dataset.k]; el.value = v==null?"":v; });
+  $("#pStage").innerHTML = `<option value="">—</option>`+STAGES.map(s=>`<option value="${s.n}" ${String(P.stage)===String(s.n)?"selected":""}>${s.n}. ${s.t}</option>`).join("");
+  // team
+  $("#pTeam").innerHTML = P.team.map((m,i)=>`
+    <div class="gate" style="margin-top:${i?8:0}px">
+      <div class="row" style="justify-content:space-between">
+        <b>${i+1}. ${esc(diverName(m.diver))}</b>
+        <div class="row">${i?`<button class="btn sm" data-up="${i}">↑</button>`:""}${P.team.length>1?`<button class="btn sm bad" data-rm="${i}">Remove</button>`:""}</div>
+      </div>
+      <div class="grid" style="margin-top:8px">
+        <div><label>Tank</label><select data-m="${i}.tank">${TANKS.map(t=>`<option value="${t.id}" ${t.id===m.tank?"selected":""}>${t.name}</option>`).join("")}</select></div>
+        <div><label>Start psi</label><input type="number" step="100" data-m="${i}.fill" value="${m.fill}"></div>
+        <div><label>SAC (cfm)</label><select data-m="${i}.sac">${sacOptions(m.diver,+m.sac)}</select></div>
+        <div><label>Exposure</label><select data-m="${i}.expo">${EXPOSURE.map(e=>`<option ${e===m.expo?"selected":""}>${e}</option>`).join("")}</select></div>
+        <div><label>Weight (lb)</label><input type="number" step="0.5" data-m="${i}.weight" value="${m.weight??""}"></div>
+      </div>
+    </div>`).join("");
+  const avail = S.divers.filter(d=>!P.team.some(m=>m.diver===d.id));
+  $("#pAddSel").innerHTML = avail.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join("");
+  $("#pAddSel").style.display = $("#pAdd").style.display = avail.length?"":"none";
+  // contingencies
+  const showLight = P.light!=="Day" || +P.stage===4 || +P.stage>=8;
+  $("#pCont").innerHTML = Object.keys(CONT_LABELS).filter(k=>k!=="light"||showLight).map(k=>
+    `<label style="margin-top:8px">${CONT_LABELS[k]}</label><textarea data-c="${k}" style="min-height:48px;font-family:inherit;font-size:14px">${esc(P.cont[k]??CONT_DEFAULT[k])}</textarea>`).join("");
+  // saved plans
+  $("#pSaved").innerHTML = S.plans.length ? `<details><summary>Saved plans (${S.plans.length})</summary>${S.plans.map((p,i)=>
+    `<div class="row" style="justify-content:space-between;margin-top:6px"><span>${esc(p.date||"")} · ${esc(p.site||"No site")} <span class="muted">· ${p.depth} ft</span></span><span class="row"><button class="btn sm" data-load="${i}">Load</button><button class="btn sm bad" data-pdel="${i}">Delete</button></span></div>`).join("")}</details>` : "";
+  renderAdvStatic();
+  renderObjectives();
+  const rg=$("#pO2Range"); const [mn,mx]=P.adv.tmx?[10,35]:[21,40]; rg.min=mn; rg.max=mx; rg.value=P.o2;
+  $("#pO2Ticks").innerHTML=(P.adv.tmx?[10,15,20,25,30,35]:[21,25,30,35,40]).map(v=>`<span>${v}</span>`).join("");
+  renderChecks();
+  renderPlanOut();
+}
+
+function renderChecks(){
+  const P=PL(); let total=0, done=0;
+  const cols = P.team.map(m=>m.diver);
+  let h="";
+  CHECKS.forEach((grp,gi)=>{
+    if(grp.deco && !P.adv?.dg) return;
+    const who = grp.team ? [["team","Team"]] : cols.map(id=>[id,diverName(id)]);
+    h += `<h3 style="margin-top:${gi?14:0}px">${grp.g}</h3><div style="overflow-x:auto"><table class="ck"><tr><th></th>${who.map(([,n])=>`<th>${esc(n)}</th>`).join("")}</tr>`;
+    grp.items.forEach((it,ii)=>{
+      h += `<tr><td>${esc(it)}</td>${who.map(([id])=>{ const key=`${gi}.${ii}.${id}`; total++; if(P.checks[key])done++; return `<td><input type="checkbox" data-ck="${key}" ${P.checks[key]?"checked":""}></td>`; }).join("")}</tr>`;
+    });
+    h += `</table></div>`;
+  });
+  $("#pChecks").innerHTML=h;
+  $("#pChkCount").textContent = `${done}/${total}`;
+  $("#pChkCount").className = "pill "+(done===total?"ok":done?"warn":"");
+}
+
+function renderAdvStatic(){
+  const P=PL();
+  document.querySelectorAll("[data-adv]").forEach(c=>c.checked=!!P.adv[c.dataset.adv]);
+  document.querySelectorAll("#v-plan .tmx").forEach(el=>el.style.display=P.adv.tmx?"":"none");
+  $("#pDecoCard").style.display = (P.adv.dg||P.adv.ds)?"":"none";
+  $("#pDgBox").style.display = P.adv.dg?"":"none";
+  $("#pDsBox").style.display = P.adv.ds?"":"none";
+  $("#pDg").innerHTML = (P.dg||[]).length ? (P.dg).map((g,i)=>`
+    <div class="grid" style="margin-top:${i?8:0}px;align-items:end">
+      <div><label>O₂ %</label><input type="number" data-dg="${i}.o2" value="${g.o2}"></div>
+      <div><label>He %</label><input type="number" data-dg="${i}.he" value="${g.he||0}"></div>
+      <div><label>Cylinder</label><select data-dg="${i}.tank">${TANKS.filter(t=>t.n===1).map(t=>`<option value="${t.id}" ${t.id===g.tank?"selected":""}>${t.name}</option>`).join("")}</select></div>
+      <div><label>Start psi</label><input type="number" step="100" data-dg="${i}.fill" value="${g.fill}"></div>
+      <div><button class="btn sm bad" data-rmdg="${i}">Remove</button></div>
+    </div>`).join("") : `<div class="muted">No deco gases yet.</div>`;
+  // GF manual factors + mode
+  const gf=gfSelect(P);
+  $("#pModel").innerHTML = `
+    <div class="row" style="justify-content:space-between"><b>Decompression model</b><span class="pill">Bühlmann ZHL-16C · GF ${gf.lo}/${gf.hi}</span></div>
+    <div class="grid" style="margin-top:8px">
+      <div><label>Gradient factors</label><select data-k="gfMode">
+        <option value="suggest" ${gf.mode==="suggest"?"selected":""}>Recommended from risk factors</option>
+        <option value="shallow" ${gf.mode==="shallow"?"selected":""}>50/80 — shallow-weighted</option>
+        <option value="conservative" ${gf.mode==="conservative"?"selected":""}>30/70 — conservative program standard</option>
+        <option value="custom" ${gf.mode==="custom"?"selected":""}>Custom</option></select></div>
+      ${gf.mode==="custom"?`<div><label>GF low</label><input type="number" data-k="gfLo" value="${P.gfLo}"></div><div><label>GF high</label><input type="number" data-k="gfHi" value="${P.gfHi}"></div>`:""}
+    </div>
+    <div id="pGfWhy"></div>
+    ${gf.mode==="suggest"?`<div style="margin-top:6px">${Object.entries(GF_FACTORS_MANUAL).map(([k,l])=>`<label class="chk" style="text-transform:none;letter-spacing:0;color:var(--text);margin:2px 0"><input type="checkbox" data-gff="${k}" ${P.gff?.[k]?"checked":""}> ${l}</label>`).join("")}</div>`:""}`;
+}
+function renderGfWhy(r){
+  const gf=r.gf, el=$("#pGfWhy"); if(!el) return;
+  el.innerHTML = `<p class="muted" style="margin:8px 0 0">${gf.why}</p>${gf.mode==="suggest"&&gf.auto.length?`<p class="muted" style="margin:4px 0 0">Detected from this plan: ${gf.auto.map(esc).join(" · ")}</p>`:""}`;
+  $("#pModel .pill").textContent = `Bühlmann ZHL-16C · GF ${gf.lo}/${gf.hi}`;
+}
+const stopStr = s => s.noDeco ? "No stops required" : s.stops.map(x=>`${x.d}′ ${x.t}${x.sw?` (${gasName(x.g)})`:""}`).join(" · ");
+
+function renderPlanOut(){
+  const P=PL(), r=planCalc();
+  $("#pCustom").style.display = P.team.some(m=>m.tank==="custom")||(P.adv.dg&&(P.dg||[]).some(g=>g.tank==="custom"))?"grid":"none";
+  renderGfWhy(r); renderSiteNotes();
+  const gname = gasName({o2:r.fo2,he:r.fhe});
+  $("#pO2Lbl").textContent = `${gname} · MOD ${Math.floor(r.mod)} ft @ ${(+P.po2).toFixed(1)} · ${r.rho.toFixed(1)} g/L at ${r.D} ft`;
+  const tblTxt = r.tblNdl===Infinity?"no limit":r.tblNdl!=null?`${r.tblNdl} min`:(r.fhe>0?"n/a (helium)":"beyond table");
+  const mTxt = r.mNDL===Infinity?"no limit":`${r.mNDL} min`;
+  const ndlCard = P.adv.ds
+    ? `<div class="big"><div class="k">Decompression</div><div class="v">${r.sched&&!r.sched.error?(r.sched.noDeco?"None":`${r.sched.decoT} <small>min stops</small>`):"—"}</div><div class="s">Model NDL ${mTxt} · Table ${tblTxt}</div></div>`
+    : `<div class="big"><div class="k">No-deco limit</div><div class="v">${r.ndl===Infinity?"No limit":`${r.ndl} min`}</div><div class="s">Table ${tblTxt}${r.ndlRow?(r.fo2>0.21?` (${gasName({o2:r.fo2,he:0})}: EAD ${Math.max(0,Math.round(r.ead))} ft → ${r.ndlRow[0]} ft row)`:` (air, ${r.ndlRow[0]} ft row)`):""} · Model GF ${r.gf.hi}: ${mTxt}. Uses the shorter.</div></div>`;
+  $("#pProfile").innerHTML = ndlCard + `
+    <div class="big"><div class="k">Gas: ${gname}</div><div class="v">${r.po2.toFixed(2)} <small>pO₂</small></div><div class="s">MOD at ${(+P.po2).toFixed(1)}: ${Math.floor(r.mod)} ft${r.fo2<0.18?` · min depth ${Math.ceil(r.minOD)} ft (hypoxic)`:""}</div></div>
+    <div class="big"><div class="k">Gas density</div><div class="v" style="color:${r.rho>6.2?"var(--bad)":r.rho>5.2?"var(--warn)":"inherit"}">${r.rho.toFixed(2)} <small>g/L at ${r.D} ft</small></div><div class="s">Max depth at ${r.densLim} g/L: ${Math.floor(r.densMax)} ft${r.densLim<6.2?` · at 6.2: ${Math.floor(r.densHardMax)} ft`:""}</div></div>
+    <div class="big"><div class="k">Depth limited by</div><div class="v">${Math.floor(Math.min(r.mod,r.densMax))} <small>ft · ${r.mod<=r.densMax?"pO₂ MOD":"gas density"}</small></div><div class="s">MOD ${Math.floor(r.mod)} ft · density ${Math.floor(r.densMax)} ft${P.adv.tmx?` · END ${Math.max(0,Math.round(r.endFt))} ft`:""}</div></div>
+    <div class="big"><div class="k">Bottom time limited by</div><div class="v">${r.lim[1]===Infinity?"—":Math.floor(r.lim[1])} <small>min · ${r.lim[0]}</small></div><div class="s">Gas ${Math.floor(r.gasMin)}${r.ndl!=null?` · NDL ${r.ndl===Infinity?"none":r.ndl}`:""} · Planned ${P.bt||"—"}</div></div>`;
+  // trimix helper
+  if(P.adv.tmx){
+    const em=evalMixes(P), cur=em.rows.find(m=>m.o2===Math.round(r.fo2*100)&&m.he===Math.round(r.fhe*100));
+    const role=m=> m===em.rec?`<span class="pill ok">Recommended</span>`: m===em.minimal?`<span class="pill warn">Planned depth only</span>`:`<span class="pill">More margin</span>`;
+    const why=m=> m===em.rec?`Least helium that meets every limit at ${r.D} ft and stays within pO₂ ${P.po2} and 6.2 g/L at ${em.CD} ft (20 ft deeper contingency).`
+      : m===em.minimal?`Less helium, but at ${em.CD} ft (20 ft deeper contingency): ${m.cfails.join(", ")}.`
+      : `Next tier: lower density and END for extra margin, at higher helium cost.`;
+    const row=(m,full)=>`<tr style="${m.ok?"":"opacity:.55"}"><td><b>${m.name}</b>${cur===m?` <span class="pill">Selected</span>`:""}${full?"":"<br>"+role(m)}</td>
+        <td>${m.lo}–${m.hi} ft</td>
+        <td style="color:${m.fails.includes("pO₂")?"var(--bad)":"inherit"}">${m.po2.toFixed(2)}</td>
+        <td style="color:${m.fails.includes("END")?"var(--bad)":"inherit"}">${Math.max(0,Math.round(m.end))}</td>
+        <td style="color:${m.fails.includes("density")?"var(--bad)":"inherit"}">${m.rho.toFixed(1)}</td>
+        <td>${m.ok?`<button class="btn sm ${m===em.rec?"pri":""}" data-mix="${m.o2}/${m.he}">Use</button>`:`<span class="muted">${m.fails.join(", ")}</span>`}</td></tr>`;
+    const head=`<tr><th>Mix</th><th>Working</th><th>pO₂</th><th>END</th><th>g/L</th><th></th></tr>`;
+    $("#pTmx").innerHTML = `<div class="gate" style="margin-top:10px"><div class="row" style="justify-content:space-between"><b>Bottom mix for ${r.D} ft</b><select data-k="mixStd" style="width:auto">${Object.entries(STD_SETS).map(([k,s])=>`<option value="${k}" ${(P.mixStd||"standard")===k?"selected":""}>${s.label}</option>`).join("")}</select></div>
+      ${em.shortlist.length?`<div style="overflow-x:auto;margin-top:6px"><table class="ds">${head}${em.shortlist.map(m=>row(m,false)+`<tr><td colspan="6" class="muted" style="border-top:0;padding-top:0;font-size:12px">${why(m)}</td></tr>`).join("")}</table></div>`
+        :`<div class="alert bad">No standard mix meets pO₂ ${P.po2}, END ${P.endLim||100} ft and ${P.dens} g/L at ${r.D} ft. Plan shallower rather than raising the density limit.</div>`}
+      ${em.rec&&em.rec.o2<18?`<div class="muted" style="font-size:12px;margin-top:4px">${em.rec.name} is hypoxic: minimum operating depth ${Math.ceil(em.rec.minOD)} ft (pO₂ 0.16)${em.rec.minOD>10?" — plan a travel gas for the descent":""}.</div>`:""}
+      <details style="margin-top:6px"><summary>All ${em.rows.length} standard mixes</summary><div style="overflow-x:auto"><table class="ds">${head}${em.rows.map(m=>row(m,true)).join("")}</table></div>
+      <div class="muted" style="font-size:12px;margin-top:4px">${(P.mixStd||"standard")==="reduced"?"Reduced-set tiers are max O₂ / min He at each MOD.":"Working depths are each mix's planned range."} END counts O₂ as narcotic. Planned limits: pO₂ ${P.po2}, END ${P.endLim||100} ft, ${P.dens} g/L.</div></details>
+      <div class="muted" style="margin-top:6px">Current gas ${gasName({o2:r.fo2,he:r.fhe})}: END ${Math.max(0,Math.round(r.endFt))} ft · min operating depth ${Math.ceil(r.minOD)} ft${cur?"":" · not a standard mix (analyzed or custom)"}</div></div>`;
+  }
+  // limit alerts
+  let a="";
+  if(r.D>r.mod) a+=`<div class="alert bad">Max depth ${r.D} ft exceeds MOD ${Math.floor(r.mod)} ft for ${gname} at pO₂ ${P.po2}.</div>`;
+  if(r.fo2<0.18) a+=`<div class="alert">Hypoxic bottom gas — not breathable shallower than ${Math.ceil(r.minOD)} ft; a travel gas is required for descent.</div>`;
+  if(P.adv.tmx && r.endFt>(num(P.endLim)||100)) a+=`<div class="alert bad">END ${Math.round(r.endFt)} ft exceeds the ${P.endLim||100} ft limit.</div>`;
+  if(!P.adv.ds && r.ndl!=null && r.ndl!==Infinity && num(P.bt)>r.ndl) a+=`<div class="alert bad">Planned bottom time ${P.bt} min exceeds the ${r.ndl}-min no-deco limit${P.adv.ds?"":" — turn on Deco schedule only if this is a planned decompression dive"}.</div>`;
+  if(r.rho>6.2) a+=`<div class="alert bad">Gas density ${r.rho.toFixed(2)} g/L exceeds the 6.2 g/L absolute maximum — high risk of CO₂ retention.</div>`;
+  else if(r.rho>r.densLim) a+=`<div class="alert">Gas density ${r.rho.toFixed(2)} g/L exceeds the ${r.densLim} g/L limit (max ${Math.floor(r.densMax)} ft on this gas).</div>`;
+  if(!P.adv.ds && !r.ndlRow && r.fhe===0) a+=`<div class="alert bad">Depth is beyond the air no-decompression table; NDL shown is from the model only.</div>`;
+  if(num(P.bt)>r.gasMin) a+=`<div class="alert bad">Planned bottom time ${P.bt} min exceeds the ${Math.floor(r.gasMin)} min of gas available at ${r.D} ft before the ${P.rule==="all"?"rock-bottom ascent":"turn"} (limiting diver).</div>`;
+  if(P.stage){
+    P.team.forEach(m=>{
+      const lim=P_(m.diver,+P.stage).lim;
+      if(lim.depth && r.D>lim.depth) a+=`<div class="alert">${esc(diverName(m.diver))}: ${r.D} ft exceeds their Instar ${P.stage} max depth of ${lim.depth} ft.</div>`;
+      if(lim.time && num(P.bt)>lim.time) a+=`<div class="alert">${esc(diverName(m.diver))}: ${P.bt} min exceeds their Instar ${P.stage} max time of ${lim.time} min.</div>`;
+      if(lim.vis && num(P.vis) && num(P.vis)<lim.vis) a+=`<div class="alert">${esc(diverName(m.diver))}: visibility ${P.vis} ft is below their Instar ${P.stage} minimum of ${lim.vis} ft.</div>`;
+      if(lim.temp && num(P.temp) && num(P.temp)<lim.temp) a+=`<div class="alert">${esc(diverName(m.diver))}: water ${P.temp}°F is below their Instar ${P.stage} minimum of ${lim.temp}°F.</div>`;
+      const s=stageStatus(m.diver,+P.stage); if(!s.preStages) a+=`<div class="alert">${esc(diverName(m.diver))} hasn't completed the earlier instars for Instar ${P.stage}.</div>`;
+    });
+    if(P.light==="Night" && +P.stage<4) a+=`<div class="alert">Night dive planned on an instar before Night & Limited Visibility (Instar 4).</div>`;
+  }
+  P.team.forEach(m=>{
+    const bad=credStatus(m.diver).filter(s=>!s.ok);
+    if(bad.length && (+P.stage>=2 || !P.stage)) a+=`<div class="alert">${esc(diverName(m.diver))}: ${bad.map(s=>`${s.label} ${s.exp?"expired "+s.exp:"not recorded"}`).join("; ")} (Training tab → readiness).</div>`;
+    if(P.adv.ds && !stageStatus(m.diver,6).complete) a+=`<div class="alert">${esc(diverName(m.diver))} hasn't completed Instar 6 — planned decompression is a Instar 7 activity.</div>`;
+    if(P.adv.tmx && r.fhe>0 && !stageStatus(m.diver,9).complete) a+=`<div class="alert">${esc(diverName(m.diver))} hasn't completed Instar 9 — mixed gas is a Instar 10 activity.</div>`;
+  });
+  $("#pLimitAlerts").innerHTML=a;
+  // gas table
+  const turnLbl = P.rule==="all" ? "Ascend at" : "Turn at";
+  const hasPlan = r.members.some(x=>x.planBg!=null);
+  $("#pGas").innerHTML = `<div style="overflow-x:auto"><table class="gt">
+    <tr><th></th>${r.members.map(x=>`<th>${esc(diverName(x.m.diver))}<div class="muted" style="font-weight:400">${esc(x.tk.name)} · ${x.fill}</div></th>`).join("")}</tr>
+    <tr><td>5-min use</td>${r.members.map(x=>`<td>${f0(x.five)}</td>`).join("")}</tr>
+    <tr class="hl"><td>Rock bottom${r.rbTarget?`<div class="muted">to ${r.rbTarget} ft switch</div>`:""}</td>${r.members.map(x=>`<td>${f0(x.rb)}</td>`).join("")}</tr>
+    <tr><td>Usable</td>${r.members.map(x=>`<td>${f0(x.usable)}<div class="muted">${f1(x.usable_cf)} cf</div></td>`).join("")}</tr>
+    <tr class="hl2"><td>${turnLbl}</td>${r.members.map(x=>`<td>${f0(x.turn)}</td>`).join("")}</tr>
+    <tr><td>Time at depth</td>${r.members.map(x=>`<td>${Math.floor(x.gasMin)} min</td>`).join("")}</tr>
+    ${hasPlan?`<tr><td>Planned back-gas use<div class="muted">whole profile</div></td>${r.members.map(x=>`<td style="color:${x.planBg+x.rb>x.fill?"var(--bad)":"inherit"}">${f0(x.planBg)}</td>`).join("")}</tr>`:""}
+  </table></div>
+  <p class="muted" style="margin:6px 0 0">All pressures in psi, rounded to 100 (use & rock bottom up, usable down, turn up).${r.members.length>1&&P.rule!=="all"?` Turn pressures are gas-matched to ${esc(diverName(r.limiter.m.diver))}'s usable gas.`:""}${r.bgStops.length?` Rock bottom includes ${r.bgStops.reduce((a,s)=>a+s.t,0)} min of required stops on back gas.`:""}</p>`;
+  let g="";
+  r.members.forEach(x=>{
+    if(x.rb>=x.fill) g+=`<div class="alert bad">${esc(diverName(x.m.diver))}: rock bottom ${f0(x.rb)} psi meets or exceeds start pressure — this tank can't support the dive.</div>`;
+    if(x.fill > x.tk.rated*1.1) g+=`<div class="alert">${esc(diverName(x.m.diver))}: start pressure is more than 10% over the tank's rated ${f0(x.tk.rated)} psi.</div>`;
+    if(x.planBg!=null && x.planBg+x.rb>x.fill) g+=`<div class="alert bad">${esc(diverName(x.m.diver))}: planned back-gas use ${f0(x.planBg)} + rock bottom ${f0(x.rb)} exceeds ${f0(x.fill)} psi.</div>`;
+  });
+  $("#pGasAlerts").innerHTML=g;
+  renderDecoOut(r);
+  renderRatio(r);
+  renderMath(r);
+  $("#pBrief").textContent = briefText(r);
+}
+
+function renderDecoOut(r){
+  const P=PL(); let h="";
+  if(P.adv.dg){
+    h += r.dgs.length ? `<div style="overflow-x:auto"><table class="ds"><tr><th>Gas</th><th>MOD @1.6</th><th>Switch</th><th>Cylinder</th></tr>${r.dgs.map(g=>`<tr class="sw"><td><b>${g.name}</b></td><td>${Math.floor(g.mod16)} ft</td><td>${g.sw>0?g.sw+" ft":"—"}</td><td>${esc(g.tk.name)} · ${g.fill}</td></tr>`).join("")}</table></div>` : "";
+    r.dgs.forEach(g=>{ if(g.sw<=0) h+=`<div class="alert">${g.name} has no usable switch depth.</div>`; else if(g.sw>=r.D) h+=`<div class="alert">${g.name} switch depth (${g.sw} ft) is at or below max depth — it won't be used as a deco gas.</div>`; });
+    const names=r.dgs.map(g=>Math.round(g.o2*100)); if(new Set(names).size<names.length) h+=`<div class="alert">Two deco gases share the same O₂ — check for duplicate cylinders.</div>`;
+    if(!P.adv.ds) h+=`<p class="muted">Turn on <b>Deco schedule</b> to calculate how much of each gas the stops require.</p>`;
+  }
+  if(P.adv.ds){
+    const s=r.sched;
+    if(!s) h+=`<p class="muted">Enter depth and bottom time.</p>`;
+    else if(s.error) h+=`<div class="alert bad">${s.error}</div>`;
+    else {
+      h += `<div class="out" style="margin-top:6px">
+        <div class="big"><div class="k">First stop</div><div class="v">${s.noDeco?"—":s.stops[0].d+" <small>ft</small>"}</div><div class="s">GF ${r.gf.lo}/${r.gf.hi}</div></div>
+        <div class="big"><div class="k">Stop time · run time</div><div class="v">${s.decoT} <small>min · RT ${Math.ceil(s.rt)}</small></div><div class="s">Time to surface ${Math.ceil(s.tts)} min · deco:bottom ${(s.decoT/num(P.bt)).toFixed(2)}:1</div></div>
+        <div class="big"><div class="k">Oxygen exposure</div><div class="v" style="color:${s.cns>80?"var(--bad)":s.cns>50?"var(--warn)":"inherit"}">${Math.round(s.cns)}% <small>CNS</small></div><div class="s">${Math.round(s.otu)} OTU (single-exposure limits)</div></div></div>`;
+      if(!s.noDeco){
+        let rt = 0, rows=""; const firstDepth=s.stops[0]?.d;
+        // running time at end of each stop
+        let acc=0; s.segs.forEach(sg=>{ acc+=sg.t; sg.rtEnd=acc; });
+        s.stops.forEach(st=>{ const seg=[...s.segs].reverse().find(sg=>sg.d0===st.d&&sg.d1===st.d); rows+=`<tr class="${st.sw?"sw":""}"><td>${st.d} ft</td><td>${st.t} min</td><td>${seg?Math.ceil(seg.rtEnd):""}</td><td>${gasName(st.g)}${st.sw?" ← switch":""}</td></tr>`; });
+        h += `<div style="overflow-x:auto;margin-top:10px"><table class="ds"><tr><th>Stop</th><th>Time</th><th>Run time</th><th>Gas</th></tr>
+          <tr><td>${r.D} ft</td><td>${P.bt} min</td><td>${P.bt}</td><td>${gasName({o2:r.fo2,he:r.fhe})} (bottom)</td></tr>${rows}<tr><td>Surface</td><td></td><td>${Math.ceil(s.rt)}</td><td></td></tr></table></div>`;
+      }
+      if(r.usableDgs.length){
+        h += `<h3>Deco gas required (reserve ${num(P.dgRes)===2?"×2":"+50%"})</h3><div style="overflow-x:auto"><table class="gt"><tr><th></th>${r.members.map(x=>`<th>${esc(diverName(x.m.diver))}</th>`).join("")}</tr>
+          ${r.usableDgs.map((g,gi)=>`<tr><td>${g.name}<div class="muted">${esc(g.tk.name)} · ${g.fill}</div></td>${r.members.map(x=>{ const n=x.dgNeed[gi]; return `<td style="color:${n.ok?"inherit":"var(--bad)"}">${f0(n.psi)}</td>`; }).join("")}</tr>`).join("")}</table></div>`;
+        r.members.forEach(x=>x.dgNeed.forEach(n=>{ if(!n.ok) h+=`<div class="alert bad">${esc(diverName(x.m.diver))}: ${n.g.name} needs ${f0(n.psi)} psi but the cylinder starts at ${f0(n.g.fill)}.</div>`; }));
+      }
+      if(s.cns>80) h+=`<div class="alert bad">CNS ${Math.round(s.cns)}% exceeds 80% — reduce pO₂ or exposure.</div>`;
+      if(s.otu>300) h+=`<div class="alert">${Math.round(s.otu)} OTU for one dive — check the daily limit.</div>`;
+      h += `<p class="muted" style="margin:8px 0 0">Planning aid. Cross-check every schedule against an independent decompression planner and your computer before diving it.</p>`;
+    }
+  }
+  $("#pDecoOut").innerHTML=h;
+}
+
+function renderRatio(r){
+  const P=PL();
+  if(!r.cont.length){ $("#pRatio").innerHTML=`<p class="muted">Enter depth and bottom time.</p>`; return; }
+  const gasesTxt = [gasName({o2:r.fo2,he:r.fhe}), ...r.usableDgs.map(g=>g.name)].join(" + ");
+  $("#pRatio").innerHTML = `<div style="overflow-x:auto"><table class="ds"><tr><th>Case</th><th>Stops (ft, min)</th><th>Deco</th><th>Ratio</th><th>Back gas</th></tr>
+    ${r.cont.map(c=>{
+      if(c.err) return `<tr><td>${c.lab}<div class="muted">${c.d} ft / ${c.t} min</div></td><td colspan="4" style="color:var(--bad)">${c.err}</td></tr>`;
+      const short = c.bgUse.filter(b=>b.psi>b.x.fill);
+      return `<tr><td><b>${c.lab}</b><div class="muted">${c.d} ft / ${c.t} min</div></td>
+        <td>${stopStr(c.s)}${c.mod?`<div style="color:var(--bad)">Beyond MOD</div>`:""}${c.dens>6.2?`<div style="color:var(--bad)">${c.dens.toFixed(1)} g/L</div>`:c.dens>5.2?`<div style="color:var(--warn)">${c.dens.toFixed(1)} g/L</div>`:""}</td>
+        <td>${c.s.decoT} min<div class="muted">RT ${Math.ceil(c.s.rt)}</div></td>
+        <td>${c.s.noDeco?"—":c.ratio.toFixed(2)+":1"}</td>
+        <td style="color:${short.length?"var(--bad)":"inherit"}">${c.bgUse.map(b=>`${esc(diverName(b.x.m.diver))}: ${f0(b.psi)}`).join("<br>")}</td></tr>`;
+    }).join("")}</table></div>
+    <p class="muted" style="margin:6px 0 0">Schedules from the same model and GF ${r.gf.lo}/${r.gf.hi} on ${gasesTxt}, ascending at ${P.arate} ft/min. <b>Ratio</b> = stop time ÷ bottom time — memorize these as your no-computer backup. A contingency case ends the dive. Back gas = psi each diver would breathe for the whole profile (no reserve); red means more than they carry. These tables come from the model, for the gases you actually carry.</p>`;
+}
+
+function renderMath(r){
+  const P=PL();
+  let m = `ATA at ${r.D} ft = ${r.D}/${r.W} + 1 = ${f3(r.ata)}
+RB ascent = (${r.D} − ${r.rbTarget}) ft ÷ ${P.arate} ft/min = ${f1(r.ascMin)} min at avg ${f3(r.ascAvgAta)} ATA${r.rbTarget?` (to first gas switch)`:""}
+${r.ead!=null&&r.fo2>0.21?`EAD = (${r.D}+${r.W})×${r.fn2.toFixed(2)}/0.79 − ${r.W} = ${f1(r.ead)} ft\n`:""}${r.fhe>0?`END = (${r.D}+${r.W})×(1−${r.fhe.toFixed(2)}) − ${r.W} = ${f1(r.endFt)} ft\n`:""}pO₂ = ${r.fo2.toFixed(2)} × ${f3(r.ata)} = ${r.po2.toFixed(2)} · MOD = (${P.po2}/${r.fo2.toFixed(2)} − 1) × ${r.W} = ${f1(r.mod)} ft
+Surface density = ${r.fo2.toFixed(2)}×1.429 + ${r.fn2.toFixed(2)}×1.251${r.fhe>0?` + ${r.fhe.toFixed(2)}×0.179`:""} = ${f3(r.rho0)} g/L
+Density at depth = ${f3(r.rho0)} × ${f3(r.ata)} = ${f2(r.rho)} g/L · max depth = (${r.densLim}/${f3(r.rho0)} − 1) × ${r.W} = ${f1(r.densMax)} ft
+Model: Bühlmann ZHL-16C, GF ${r.gf.lo}/${r.gf.hi}, descent ${r.desc} ft/min, ascent ${r.asc} ft/min, water vapor 0.0627 bar\n`;
+  r.members.forEach(x=>{
+    m += `\n${diverName(x.m.diver).toUpperCase()} — ${x.tk.name}, TF ${f3(x.tk.tf)} cf/100 psi
+  5-min: ${x.sac} × ${f3(r.ata)} × 5 = ${f1(x.five_cf)} cf = ${f0(x.five_raw)} → ${f0(x.five)} psi
+  RB rate: ${num(P.stress)===0?`2 × (${x.sac} + buddy max)`:`2 × ${P.stress}`} = ${f2(x.team)} cfm
+  RB: ${f1(x.rbDepth)} (depth) + ${f1(x.rbAsc)} (ascent)${x.rbBgStops?` + ${f1(x.rbBgStops)} (back-gas stops)`:""}${x.rbStop?` + ${f1(x.rbStop)} (stop)`:""} = ${f1(x.rb_cf)} cf = ${f0(x.rb_raw)} → ${f0(x.rb)} psi
+  Usable: ${x.fill} − ${x.rb} = ${f0(x.usable)} psi = ${f1(x.usable_cf)} cf`;
+    if(P.rule!=="all") m += `\n  Allowance: ${f1(r.limUse)} cf × ${P.rule==="half"?"1/2":"1/3"} = ${f1(r.allow_cf)} cf = ${f0(x.allow_psi_raw)} psi → turn ${x.fill} − ${f0(x.allow_psi_raw)} → ${f0(x.turn)} psi`;
+    m += `\n  Time: ${f1(x.allowCfActual)} cf ÷ (${x.sac} × ${f3(r.ata)}) = ${f1(x.gasMin)} min`;
+    if(x.planBg!=null) m += `\n  Planned back gas: ${x.sac} × ${f1(r.sched.use.bottom)} ATA·min = ${f1(x.sac*r.sched.use.bottom)} cf → ${f0(x.planBg)} psi`;
+    x.dgNeed.forEach(n=>{ m += `\n  ${n.g.name}: ${x.sac} × ${f1(r.sched.use[n.g.key]||0)} ATA·min × ${P.dgRes} = ${f1(n.cf)} cf → ${f0(n.psi)} psi`; });
+    m += `\n`;
+  });
+  $("#pMath").textContent=m;
+}
+
+function briefText(r){
+  const P=PL(); const L=[];
+  const gname=gasName({o2:r.fo2,he:r.fhe});
+  L.push(`DIVE BRIEF — ${P.date||""}${P.site?` · ${P.site}`:""}`);
+  if((P.obj||[]).length){ L.push(`Objectives (Instar ${P.stage}):`); P.obj.forEach((o,i)=>{ L.push(`  ${i+1}. ${txt(o.text)}`); const s=stdFor(o.text); if(s) L.push(`     Target: ${s.p}`); }); }
+  if(P.objective) L.push(`Goal: ${P.objective}`);
+  if(P.stage) L.push(`Training: Instar ${P.stage} — ${STAGES[P.stage-1].t}`);
+  L.push(`Team (in order): ${P.team.map((m,i)=>`${i+1}. ${diverName(m.diver)}`).join(", ")}`);
+  L.push(`Environment: ${+P.water===34?"fresh":"salt"} water${P.temp?`, ${P.temp}°F`:""}${P.vis?`, vis ${P.vis} ft`:""}, current ${String(P.current).toLowerCase()}, ${String(P.light).toLowerCase()}`);
+  if(P.entry) L.push(`Entry/exit: ${P.entry}`);
+  if(P.route) L.push(`Route/hazards: ${P.route}`);
+  L.push(`Profile: max ${r.D} ft, bottom time ${P.bt} min, ${gname} (pO₂ ${r.po2.toFixed(2)}, MOD ${Math.floor(r.mod)} ft${r.fhe>0?`, END ${Math.round(r.endFt)} ft`:""})`);
+  L.push(`Gas density: ${r.rho.toFixed(2)} g/L (limit ${r.densLim}, max ${Math.floor(r.densMax)} ft)`);
+  L.push(`Model: Bühlmann ZHL-16C GF ${r.gf.lo}/${r.gf.hi}${r.gf.factors.length?` (factors: ${r.gf.factors.join(", ")})`:""}`);
+  if(!P.adv.ds) L.push(`NDL: ${r.ndl===Infinity?"no limit":r.ndl+" min"} · Ascent ${P.arate} ft/min · Stop: ${P.stop}`);
+  if(P.adv.dg && r.dgs.length) L.push(`Deco gases: ${r.dgs.map(g=>`${g.name} @ ${g.sw} ft (${g.tk.name}, ${g.fill} psi)`).join("; ")}`);
+  if(P.adv.ds && r.sched && !r.sched.error) L.push(`Deco: ${stopStr(r.sched)} · ${r.sched.decoT} min stops · RT ${Math.ceil(r.sched.rt)} · CNS ${Math.round(r.sched.cns)}% · ${Math.round(r.sched.otu)} OTU`);
+  L.push(`Gas rule: ${P.rule==="all"?"all usable — ascend at rock bottom":P.rule==="half"?"halves":"thirds"}`);
+  r.members.forEach(x=>L.push(`  ${diverName(x.m.diver)}: ${x.tk.name} @ ${x.fill} psi · ${P.rule==="all"?"ascend":"turn"} ${x.turn} · RB ${x.rb} · 5-min ${x.five} psi · ${x.m.expo}${x.m.weight?`, ${x.m.weight} lb`:""}`));
+  L.push(`Dive ends at: ${Math.floor(r.lim[1])===Infinity?"—":Math.floor(r.lim[1])+" min"} (${r.lim[0].toLowerCase()} limit), turn pressure, or any diver's call`);
+  L.push(``,`CONTINGENCIES`);
+  const showLight = P.light!=="Day" || +P.stage===4 || +P.stage>=8;
+  Object.keys(CONT_LABELS).filter(k=>k!=="light"||showLight).forEach(k=>L.push(`${CONT_LABELS[k]}: ${P.cont[k]??CONT_DEFAULT[k]}`));
+  L.push(``,`CONTINGENCY SCHEDULES (end the dive and follow)`);
+  r.cont.filter(c=>!/reference/.test(c.lab)).forEach(c=>{ if(!c.err) L.push(`${c.lab} (${c.d} ft/${c.t} min): ${stopStr(c.s)}${c.s.noDeco?"":` — ${c.s.decoT} min, ratio ${c.ratio.toFixed(2)}:1`}`); });
+  return L.join("\n");
+}
+
+
+/* ---- Dive objectives pulled from the training report card ---- */
+// What each venue can host. Land: briefings and dry runs. Pool / confined: no depth, deco, overhead or darkness.
+const NEEDS = [
+  [/overhead|penetration|cavern|daylight.zone|restriction|single-file|sump|habitat|dry chamber|inside a|hull|doorway|hatch|rooms, levels|vertical penetrations|through restrictions|along the guideline|light-zone|percolation|formations|fragile features|silt and rust/i, "overhead"],
+  [/depth|deep|narcosis|stop\b|stops|deco|ceiling|shot|upline|dsmb|offshore|current|flow|siphon|boat|free-ascent|drifting|sawtooth|gas switch|switch depth|long penetration/i, "open"],
+  [/night|darkness|light signals|light discipline|light-based|light attachment|primary and backup dive lights/i, "night"],
+  [/hypothermia|cold|thermal|drysuit|exposure (suit|protection)|thick exposure/i, "cold"],
+  [/compass|navigat|route|smb|spool|reel|guideline|line |line\b|markers|tie-off|jump|surface tow|exit\b|rescue breaths|ascent/i, "confined"]];
+const VENUE_RANK={land:0,pool:1,confined:2,open:3,overhead:4};
+// Doable anywhere (land, pool, water): briefings, written plans, research, gas analysis.
+const ANYWHERE_RX=/\b(plan|briefing|brief)\b|research|permissions|site rules|sketch|emergency action|analy[sz]|\blabel/i;
+// Additionally doable on land as a dry run.
+const LAND_RX=/oxygen administration|rigging|conservation|etiquette|valve drill|s-drill|configuration|stowage|protocols|failure-mode|logistics|criteria|strategy|selection|roles/i;
+function venueOK(text,kind,P){
+  const v=P.venue||"open", r=VENUE_RANK[v];
+  if(ANYWHERE_RX.test(text)) return true;
+  if(v==="land") return kind==="exp" || LAND_RX.test(text);
+  for(const [rx,need] of NEEDS){ if(!rx.test(text)) continue;
+    if(need==="night" && !(P.light==="Night"||P.light==="Dusk / dawn"||v==="overhead")) return false;
+    if(need==="cold" && !((num(P.temp)&&num(P.temp)<65)||P.team.some(m=>/semi-dry|Drysuit|7 mm/.test(m.expo||"")))) return false;
+    if(VENUE_RANK[need]!=null && r<VENUE_RANK[need]) return false; }
+  return true;
+}
+function objectiveCandidates(P){
+  const n=+P.stage; if(!n) return [];
+  const st=STAGES[n-1], out=[];
+  const req={exp:1,skill:2,gate:3};
+  const add=(key,kind,i,text)=>{
+    const who=P.team.map(m=>{ const p=P_(m.diver,n);
+      const k = kind==="gate"?"gate":itemType(p,...key.split(".").map(Number),STAGES[n-1].items[+key.split(".")[0]][0][+key.split(".")[1]]);
+      const cur = k==="exp" ? (p.ex[key]?1:0) : k==="gate" ? (p.gate[key.slice(2)]?.g||0) : (p.sk[key]?.g||0);
+      const need = req[k]; return {diver:m.diver, kind:k, cur, need, gap:Math.max(0,need-cur)}; });
+    const gap=who.reduce((a,w)=>a+w.gap,0);
+    const k0=who[0]?.kind||kind;
+    if(gap>0 && venueOK(text,k0,P)) out.push({key, kind:k0, i, text, who, gap});
+  };
+  st.items.forEach(([concepts,gate],i)=>{
+    concepts.forEach((c,j)=>add(`${i}.${j}`,"item",i,c));
+    add(`g.${i}`,"gate",i,gate);
+  });
+  return out;
+}
+function autoPickObjectives(P,max=4){
+  // Supporting items first (largest team gap), at most one per principle; a gate only once its principle's items are met.
+  const c=objectiveCandidates(P), picked=[], used=new Set();
+  const itemsLeft=i=>c.some(x=>x.i===i&&x.kind!=="gate");
+  [...c].sort((a,b)=>b.gap-a.gap || (a.kind==="gate")-(b.kind==="gate") || a.i-b.i).forEach(x=>{
+    if(picked.length>=max||used.has(x.i)) return;
+    if(x.kind==="gate" && itemsLeft(x.i)) return;
+    picked.push(x.key); used.add(x.i); });
+  return picked;
+}
+const GL=["Not yet","Developing","Performing","Excelling"];
+function whoTxt(x){ return x.who.filter(w=>w.gap>0).map(w=>`${diverName(w.diver)}: ${w.kind==="exp"?"not done":GL[w.cur]}`).join(" · "); }
+function renderSiteNotes(){
+  const P=PL(), el=$("#pSiteNotes"); if(!el) return;
+  const s=(P.site||"").trim().toLowerCase();
+  const seen=new Set();
+  const past=s?S.log.filter(d=>(d.site||"").trim().toLowerCase()===s&&(d.siteNotes||d.aarImprove)).sort((a,b)=>(b.date||"").localeCompare(a.date||""))
+    .filter(d=>{ const k=(d.siteNotes||"")+"|"+(d.aarImprove||""); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,3):[];
+  el.innerHTML=past.length?`<div class="gate" style="padding:8px"><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">From past reviews at this site</div>${past.map(d=>`<div style="font-size:13px;margin-top:4px"><span class="muted">${esc(d.date)} · ${esc(diverName(d.diver))}:</span> ${esc(d.siteNotes||"")}${d.aarImprove?` <span style="color:var(--warn)">Improve: ${esc(d.aarImprove)}</span>`:""}</div>`).join("")}</div>`:"";
+}
+function renderObjectives(){
+  const P=PL(), box=$("#pObjBox"); if(!box) return;
+  renderSiteNotes();
+  if(!P.stage){ box.innerHTML=`<div class="muted" style="font-size:13px">Pick an instar to build objectives from the report card.</div>`; return; }
+  const c=objectiveCandidates(P), byKey=Object.fromEntries(c.map(x=>[x.key,x]));
+  P.obj=(P.obj||[]).filter(o=>o.stage==+P.stage);
+  const st=STAGES[P.stage-1];
+  const label=x=>`${x.kind==="gate"?"GATE":x.kind==="exp"?"EXP":"SKILL"} · ${txt(x.text).slice(0,70)}`;
+  const opts=PRINCIPLES.map((pr,i)=>{ const xs=c.filter(x=>x.i===i&&!P.obj.some(o=>o.key===x.key)); return xs.length?`<optgroup label="${pr}">${xs.map(x=>`<option value="${x.key}">${esc(label(x))}</option>`).join("")}</optgroup>`:""; }).join("");
+  const chips=P.obj.map(o=>{ const x=byKey[o.key];
+    return `<div class="gate" style="margin-top:6px;padding:8px"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;gap:8px;align-items:flex-start">
+      <div style="flex:1"><span class="tag" style="cursor:default">${o.kind==="gate"?"GATE":o.kind==="exp"?"EXP":"SKILL"}</span> <b style="font-size:14px">${esc(txt(o.text))}</b>
+      <div class="muted" style="font-size:12px">${PRINCIPLES[o.i]}${x?` · ${esc(whoTxt(x))}`:" · met by the team"}</div>
+      ${x&&x.kind!=="exp"&&stdFor(o.text)?`<div style="font-size:12px;color:var(--accent)">Target — ${esc(stdLine(o.text,Math.min(...x.who.map(w=>w.cur))))}</div>`:""}</div>
+      <button class="btn sm bad" data-objrm="${o.key}">✕</button></div></div>`; }).join("");
+  const n=P.obj.length;
+  const focus=P.team.map(m=>{ const l=[...S.log].filter(d=>d.diver===m.diver&&d.nextFocus).sort((a,b)=>(b.date||"").localeCompare(a.date||""))[0]; return l?`${esc(diverName(m.diver))}: ${esc(l.nextFocus)}`:""; }).filter(Boolean);
+  box.innerHTML = (focus.length?`<div class="muted" style="font-size:13px;margin-bottom:6px">Last review's next focus — ${focus.join(" · ")}</div>`:"") + `<label>Dive objectives — Instar ${P.stage} at ${$('[data-k="venue"] option:checked')?.textContent||P.venue}</label>
+    <div class="row" style="flex-wrap:nowrap;gap:6px"><select id="pObjSel" style="flex:1">${c.length?`<option value="">Add an objective (${c.length} available)…</option>${opts}`:`<option value="">Nothing outstanding fits this venue and these conditions</option>`}</select>
+    <button class="btn sm" id="pObjAuto">Suggest</button></div>
+    ${chips}
+    ${n>4?`<div class="alert">${n} objectives — a training dive usually holds focus on 2–4. Consider moving some to the next dive.</div>`:""}
+    ${n?`<div class="muted" style="font-size:12px;margin-top:4px">From the Training report card. Grades there drive what's offered; venue, light and water temperature filter what can be practiced.</div>`:""}`;
+}
+
+function renderGas(){ renderPlan(); }   // other modules call this after data changes
+
+// events
+$("#v-plan").addEventListener("input", e=>{
+  const P=PL(), t=e.target;
+  if(t.dataset.adv){ P.adv[t.dataset.adv]=t.checked;
+    if(t.dataset.adv==="dg" && t.checked && !(P.dg||[]).length) P.dg=[{o2:50,he:0,tank:"al40",fill:3000},{o2:100,he:0,tank:"al40",fill:3000}];
+    save(); renderPlan(); return; }
+  if(t.dataset.gff){ (P.gff ??= {})[t.dataset.gff]=t.checked; save(); renderPlanOut(); return; }
+  if(t.dataset.dg){ const [i,f]=t.dataset.dg.split("."); P.dg[+i][f] = f==="tank"?t.value:(t.value===""?"":+t.value); save(); renderPlanOut(); return; }
+  if(t.dataset.k!==undefined){ const k=t.dataset.k; P[k] = (t.type==="number"||["water","po2","dens","arate","stress","ptime","ss","cCount","lastStop","desc","dgRes"].includes(k)) ? (t.value===""?"":+t.value) : t.value;
+    if(k==="o2") document.querySelectorAll('#v-plan [data-k="o2"]').forEach(el=>{ if(el!==t) el.value=P.o2; });
+    save(); if(["light","stage","gfMode","mixStd","venue"].includes(k)) { renderPlan(); } else renderPlanOut(); return; }
+  if(t.dataset.m){ const [i,f]=t.dataset.m.split("."); const m=P.team[+i];
+    m[f] = ["fill","sac","weight"].includes(f) ? (t.value===""?"":+t.value) : t.value;
+    if(f==="tank"){ const tk=TANKS.find(x=>x.id===t.value); if(tk && tk.id!=="custom") { m.fill=tk.rated; t.closest(".grid").querySelector(`[data-m="${i}.fill"]`).value=tk.rated; } }
+    save(); renderPlanOut(); return; }
+  if(t.dataset.c){ P.cont[t.dataset.c]=t.value; save(); $("#pBrief").textContent=briefText(planCalc()); return; }
+  if(t.dataset.ck){ P.checks[t.dataset.ck]=t.checked; save(); renderChecks(); return; }
+  if(t.id==="pObjSel" && t.value){ const x=objectiveCandidates(P).find(c=>c.key===t.value); if(x){ (P.obj??=[]).push({stage:+P.stage,key:x.key,kind:x.kind,i:x.i,text:x.text}); save(); renderObjectives(); renderPlanOut(); } }
+});
+$("#v-plan").addEventListener("click", e=>{
+  const P=PL(), b=e.target.closest("button"); if(!b) return;
+  if(b.id==="pObjAuto"){ const c=objectiveCandidates(P); const keys=autoPickObjectives({...P,obj:[]});
+    P.obj=keys.map(k=>{ const x=c.find(y=>y.key===k); return {stage:+P.stage,key:x.key,kind:x.kind,i:x.i,text:x.text}; }); save(); renderObjectives(); renderPlanOut(); return; }
+  if(b.dataset.objrm){ P.obj=P.obj.filter(o=>o.key!==b.dataset.objrm); save(); renderObjectives(); renderPlanOut(); return; }
+  if(b.dataset.mix){ const [o,he]=b.dataset.mix.split("/").map(Number); P.o2=o; P.he=he; save(); renderPlan(); return; }
+  if(b.dataset.adddg){ const [o,he]=b.dataset.adddg.split("/").map(Number); (P.dg ??= []).push({o2:o,he,tank:"al40",fill:3000}); save(); renderPlan(); return; }
+  if(b.dataset.rmdg){ P.dg.splice(+b.dataset.rmdg,1); save(); renderPlan(); return; }
+  if(b.dataset.rm){ P.team.splice(+b.dataset.rm,1); save(); renderPlan(); }
+  else if(b.dataset.up){ const i=+b.dataset.up; [P.team[i-1],P.team[i]]=[P.team[i],P.team[i-1]]; save(); renderPlan(); }
+  else if(b.dataset.load){ S.plan=normalizePlan(structuredClone(S.plans[+b.dataset.load])); S.plan.checks={}; save(); renderPlan(); flash("Plan loaded — checks cleared."); }
+  else if(b.dataset.pdel){ if(b.textContent!=="Confirm"){ b.textContent="Confirm"; return; } S.plans.splice(+b.dataset.pdel,1); save(); renderPlan(); }
+});
+function flash(t){ $("#pMsg").textContent=t; setTimeout(()=>$("#pMsg").textContent="",2500); }
+$("#pAdd").onclick=()=>{ const id=$("#pAddSel").value; if(!id)return; const last=[...S.log].reverse().find(d=>d.diver===id);
+  const la=loggedSac(id);
+  PL().team.push({diver:id, tank:last?.tank||PL().team[0]?.tank||"al80", fill:+(last?.start)||PL().team[0]?.fill||3000, sac:la?la.avg:0.5, expo:last?.expo||"5 mm wetsuit", weight:last?.weight||""});
+  save(); renderPlan(); };
+$("#pNew").onclick=()=>{ const keep=PL(); const p=PLAN_DEFAULT();
+  p.team=keep.team.map(m=>({...m})); ["water","po2","dens","arate","stress","ptime","ss","rule","cCap","cRated","cCount","adv","endLim","gfMode","gfLo","gfHi","lastStop","desc","dgRes"].forEach(k=>p[k]=structuredClone(keep[k])); p.dg=structuredClone(keep.dg||[]); p.cont={...keep.cont};
+  S.plan=p; save(); renderPlan(); flash("New plan started — team, gas settings and contingencies kept."); };
+$("#pSave").onclick=()=>{ const p=structuredClone(PL()); p.checks={};
+  const i=S.plans.findIndex(x=>x.date===p.date && x.site===p.site);
+  if(i>=0) S.plans[i]=p; else S.plans.unshift(p); save(); renderPlan(); flash(i>=0?"Saved plan updated.":"Plan saved."); };
+$("#pContReset").onclick=()=>{ PL().cont={...CONT_DEFAULT}; save(); renderPlan(); };
+$("#pChkReset").onclick=()=>{ PL().checks={}; save(); renderChecks(); };
+$("#pCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText($("#pBrief").textContent); $("#pCopy").textContent="Copied"; }catch(e){ const rg=document.createRange(); rg.selectNodeContents($("#pBrief")); const s=getSelection(); s.removeAllRanges(); s.addRange(rg); $("#pCopy").textContent="Selected — copy"; } setTimeout(()=>$("#pCopy").textContent="Copy brief",2000); };
+let logQueue=[];
+function startLogFromPlan(diver, shared){
+  const P=PL(), m=P.team.find(x=>x.diver===diver)||P.team[0];
+  const r=planCalc(), x=r.members.find(y=>y.m.diver===diver);
+  showTab("log"); blankForm(diver);
+  const base={...formData(), date:P.date, diver, site:P.site, water:String(P.water), temp:P.temp, vis:P.vis, expo:m.expo, weight:m.weight, tank:m.tank, o2:P.o2,
+    cCap:P.cCap, cRated:P.cRated, cCount:P.cCount, start:m.fill, maxD:"", avgD:"", time:"", stage:P.stage,
+    planD:P.depth, planT:P.bt, planTurn:x?x.turn:"", planObj:[...(P.obj||[]).map(o=>txt(o.text)),P.objective].filter(Boolean).join("; "), credits:[]};
+  if(shared) ["maxD","avgD","time","aarActual","aarWhy","siteNotes"].forEach(k=>base[k]=shared[k]);
+  fillForm(base);
+  (P.obj||[]).filter(o=>o.stage===+P.stage).forEach(o=>addCredit(o.key,+P.stage,diver));
+  renderLog(); renderCredits(); renderAarAux();
+}
+$("#pLog").onclick=()=>{
+  const P=PL(); logQueue=P.team.slice(1).map(m=>m.diver);
+  startLogFromPlan(P.team[0].diver);
+  $("#logMsg").textContent=`Prefilled from the plan${logQueue.length?` — after saving, you'll be taken to the next team member`:""}. Add end pressure, average depth, time and the review.`;
+  $("#logForm").scrollIntoView({behavior:"smooth"});
+};
+
+
+/* ---------------- TABS ---------------- */
+function showTab(t){
+  S.tab=t; save();
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+t));
+  try{ if(location.hash!=="#"+t) history.replaceState(null,"","#"+t); }catch(e){}
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+const TABS=["plan","log","train"];
+window.addEventListener("hashchange",()=>{ let h=location.hash.slice(1); if(h==="gas")h="plan"; if(TABS.includes(h)) showTab(h); });
+
+renderLog(); blankForm(); renderLog(); renderGas(); renderTrain();
+let h0=location.hash.slice(1); if(h0==="gas")h0="plan"; showTab(TABS.includes(h0)?h0:(TABS.includes(S.tab)?S.tab:"plan"));
+
+/* ---------------- INSTALLABLE APP (PWA) ---------------- */
+(function(){
+  const btn=$("#installBtn"), sheet=$("#installSheet"), steps=$("#installSteps");
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone===true;
+  const ua=navigator.userAgent, isIOS=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  const isSafari=/^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(ua);
+  let deferred=null;
+  const show=()=>{ if(!standalone) btn.hidden=false; };
+  const ios=()=>{ steps.innerHTML = isSafari
+      ? `<ol><li>Tap the <b>Share</b> button in Safari's toolbar.</li><li>Choose <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>.</li></ol>`
+      : `<p>On iPhone and iPad, open this page in <b>Safari</b>, then use <b>Share → Add to Home Screen</b>.</p>`;
+    sheet.hidden=false; };
+  window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferred=e; show(); });
+  window.addEventListener("appinstalled",()=>{ deferred=null; btn.hidden=true; });
+  if(isIOS) show();
+  btn.addEventListener("click",async()=>{
+    if(deferred){ deferred.prompt(); const r=await deferred.userChoice; deferred=null; if(r.outcome==="accepted") btn.hidden=true; return; }
+    if(isIOS) return ios();
+    steps.innerHTML=`<p>Use your browser's menu and choose <b>Install app</b> or <b>Add to Home screen</b>.</p>`; sheet.hidden=false;
+  });
+  $("#installClose").onclick=()=>sheet.hidden=true;
+  sheet.addEventListener("click",e=>{ if(e.target===sheet) sheet.hidden=true; });
+  // Ask the browser to keep this app's data (dive log, report card) from automatic eviction
+  if(navigator.storage&&navigator.storage.persist) navigator.storage.persisted().then(p=>{ if(!p) navigator.storage.persist(); });
+  // Offline support + update notice
+  if("serviceWorker" in navigator && location.protocol!=="file:"){
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      const ready=w=>{ if(!w) return; $("#updateToast").hidden=false; $("#updateBtn").onclick=()=>w.postMessage("skipWaiting"); };
+      if(reg.waiting && navigator.serviceWorker.controller) ready(reg.waiting);
+      reg.addEventListener("updatefound",()=>{ const w=reg.installing; w.addEventListener("statechange",()=>{ if(w.state==="installed" && navigator.serviceWorker.controller) ready(w); }); });
+    }).catch(()=>{});
+    // Reload only when an update replaces an existing worker — not on the very first install
+    const hadController=!!navigator.serviceWorker.controller; let reloaded=false;
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(hadController && !reloaded){ reloaded=true; location.reload(); } });
+  }
+})();
+</script>
+</body>
+</html>
