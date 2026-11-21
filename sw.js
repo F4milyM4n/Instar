@@ -1,6 +1,6 @@
 /* Instar service worker — offline support.
    When you publish a change, bump VERSION so installed apps pick it up. */
-const VERSION = "instar-v2";
+const VERSION = "instar-v3";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest", "./favicon.ico",
   "./icons/icon-192.png", "./icons/icon-512.png",

@@ -37,9 +37,14 @@ GitHub Pages serves over HTTPS, which installing and offline use both require.
 - **Android (Chrome):** tap **Install app** in the header and confirm.
 - **Desktop (Chrome / Edge):** tap **Install app**, or use the install icon in the address bar.
 
+## What's new in version 3
+
+- **Belts.** Instars are grouped into White (1–2), Blue (3–5), Purple (6–7), Brown (8–9) and Black (10), split where the consequence of a failure changes. Each completed instar is a stripe. The diver's belt and stripes show beside their name; instar tiles carry a small belt-colored mark.
+- **Detail levels follow the belt.** White = Basic, Blue = Standard, Purple and above = Full, so full planning tools arrive with doubles at Instar 6.
+
 ## What's new in version 2
 
-- **Detail that grows with the diver.** The Dive Plan and the after action review show only the essentials at Instars 1–2 (Basic), add gas rules, pO₂, gas density, ascent rate, gradient factors and root-cause review at Instars 3–6 (Standard), and unlock trimix and decompression planning at Instar 7+ (Full). A **Detail** menu (Auto / Basic / Standard / Full) overrides it. Hidden settings are still used and summarized in plain language; safety warnings always show.
+- **Detail that grows with the diver.** The Dive Plan and the after action review show only the essentials at first (Basic), add gas rules, pO₂, gas density, ascent rate, gradient factors and root-cause review next (Standard), and unlock trimix and decompression planning last (Full) — by belt since version 3. A **Detail** menu (Auto / Basic / Standard / Full) overrides it. Hidden settings are still used and summarized in plain language; safety warnings always show.
 - **Max depth from both limits.** The gas label shows the shallower of the pO₂ MOD and the gas-density limit, and names which one sets it.
 - **Focused contingencies.** One deeper (+10 ft) and one longer (+5 min) recovery schedule — the next table increments, and the most likely planning errors.
 - **Instar always set.** Plan and log instar menus list 1–10 only and default to the diver's or team's current instar.
