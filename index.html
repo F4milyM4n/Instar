@@ -127,6 +127,8 @@ details.std .met{color:var(--ok)}
 .sheet-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;max-width:440px;width:100%}
 .sheet-card ol{padding-left:20px;margin:8px 0}.sheet-card li{margin:6px 0}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:21;background:var(--panel2);border:1px solid var(--accent);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:center;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+[data-detail="1"] [data-lvl="2"],[data-detail="1"] [data-lvl="3"],[data-detail="2"] [data-lvl="3"]{display:none !important}
+.only1{display:none}[data-detail="1"] .only1{display:revert}
 .foot{font-size:12px;color:var(--muted);text-align:center;padding:20px 0 30px}
 </style>
 </head>
@@ -150,6 +152,8 @@ details.std .met{color:var(--ok)}
     <div class="row" style="justify-content:space-between">
       <h2 style="margin:0">Dive plan</h2>
       <div class="row">
+        <label class="chip" style="gap:4px">Detail <select class="detailSel" style="width:auto;padding:2px 4px;font-size:12px;border:0;background:transparent;color:var(--text)">
+        <option value="auto">Auto</option><option value="1">Basic</option><option value="2">Standard</option><option value="3">Full</option></select></label>
         <button class="btn sm" id="pNew">New plan</button>
         <button class="btn sm" id="pSave">Save plan</button>
         <button class="btn sm pri" id="pLog">Log this dive</button>
@@ -166,13 +170,14 @@ details.std .met{color:var(--ok)}
       <div style="grid-column:1/-1" id="pObjBox"></div>
       <div style="grid-column:1/-1"><label>Goal / notes</label><input type="text" data-k="objective" placeholder="Anything else for this dive"></div>
     </div>
-    <div class="row" style="margin-top:12px;gap:6px" id="pAdv">
+    <div class="row" style="margin-top:12px;gap:6px" id="pAdv" data-lvl="3">
       <span class="muted">Advanced:</span>
       <label class="chip"><input type="checkbox" data-adv="tmx"> Trimix</label>
       <label class="chip"><input type="checkbox" data-adv="dg"> Deco gases</label>
       <label class="chip"><input type="checkbox" data-adv="ds"> Deco schedule</label>
     </div>
     <div id="pSaved" style="margin-top:10px"></div>
+    <div class="muted detailNote" style="font-size:12px;margin-top:6px"></div>
     <div class="muted" id="pMsg"></div>
   </div>
 
@@ -190,7 +195,7 @@ details.std .met{color:var(--ok)}
       <div><label>Water temp (°F)</label><input type="number" data-k="temp"></div>
       <div><label>Visibility (ft)</label><input type="number" data-k="vis"></div>
       <div><label>Current</label><select data-k="current"><option>None</option><option>Light</option><option>Moderate</option><option>Strong</option></select></div>
-      <div><label>Light</label><select data-k="light"><option>Day</option><option>Dusk / dawn</option><option>Night</option></select></div>
+      <div data-lvl="2"><label>Light</label><select data-k="light"><option>Day</option><option>Dusk / dawn</option><option>Night</option></select></div>
       <div><label>Entry / exit</label><input type="text" data-k="entry" placeholder="shore stairs, boat ladder…"></div>
       <div style="grid-column:1/-1"><label>Route &amp; hazards</label><input type="text" data-k="route" placeholder="heading out / back, boat traffic, entanglement…"></div>
     </div>
@@ -208,12 +213,12 @@ details.std .met{color:var(--ok)}
         <div class="row muted" id="pO2Ticks" style="justify-content:space-between;font-size:11px;margin-right:82px"></div></div>
       <div class="tmx"><label>Gas He %</label><input type="number" data-k="he" min="0" max="90"></div>
       <div class="tmx"><label>END limit (ft)</label><input type="number" data-k="endLim" step="10"></div>
-      <div><label>Max working pO₂</label><select data-k="po2"><option value="1.2">1.2</option><option value="1.4">1.4</option></select></div>
-      <div><label>Gas density limit</label><select data-k="dens"><option value="5.2">5.2 g/L recommended</option><option value="6.2">6.2 g/L absolute max</option></select></div>
-      <div><label>Ascent rate</label><select data-k="arate"><option value="10">10 ft/min</option><option value="20">20 ft/min</option><option value="30">30 ft/min</option></select></div>
+      <div data-lvl="2"><label>Max working pO₂</label><select data-k="po2"><option value="1.2">1.2</option><option value="1.4">1.4</option></select></div>
+      <div data-lvl="2"><label>Gas density limit</label><select data-k="dens"><option value="5.2">5.2 g/L recommended</option><option value="6.2">6.2 g/L absolute max</option></select></div>
+      <div data-lvl="2"><label>Ascent rate</label><select data-k="arate"><option value="10">10 ft/min</option><option value="20">20 ft/min</option><option value="30">30 ft/min</option></select></div>
       <div><label>Safety stop</label><select data-k="stop"><option>3 min @ 15 ft</option><option>5 min @ 15 ft</option><option>1 min @ 20 ft + 2 min @ 10 ft</option><option>None planned</option></select></div>
     </div>
-    <div class="gate" style="margin-top:12px" id="pModel"></div>
+    <div class="gate" style="margin-top:12px" id="pModel" data-lvl="2"></div>
     <div id="pTmx" class="tmx"></div>
     <div class="out" style="margin-top:12px" id="pProfile"></div>
     <div id="pLimitAlerts"></div>
@@ -221,7 +226,8 @@ details.std .met{color:var(--ok)}
 
   <div class="card">
     <h2>Gas plan</h2>
-    <div class="grid">
+    <div class="only1 muted" id="pAssume" style="font-size:13px;margin-bottom:8px"></div>
+    <div class="grid" data-lvl="2">
       <div><label>Gas rule</label><select data-k="rule"><option value="all">All usable — ascend at rock bottom</option><option value="half">Halves of usable</option><option value="thirds">Thirds of usable</option></select></div>
       <div><label>Stress SAC per diver</label><select data-k="stress"><option value="0.75">0.75 cfm</option><option value="1">1.00 cfm</option><option value="1.25">1.25 cfm</option><option value="1.5">1.50 cfm</option><option value="0">2× each diver's SAC</option></select></div>
       <div><label>Problem time at depth</label><select data-k="ptime"><option value="1">1 min</option><option value="2">2 min</option><option value="3">3 min</option></select></div>
@@ -229,7 +235,7 @@ details.std .met{color:var(--ok)}
     </div>
     <div id="pGas" style="margin-top:12px"></div>
     <div id="pGasAlerts"></div>
-    <details style="margin-top:8px"><summary>Show the math</summary><div class="math" id="pMath"></div></details>
+    <details style="margin-top:8px" data-lvl="2"><summary>Show the math</summary><div class="math" id="pMath"></div></details>
     <div class="grid" id="pCustom" style="margin-top:10px;display:none">
       <div><label>Custom: capacity per cylinder (cu ft)</label><input type="number" data-k="cCap" step="0.1"></div>
       <div><label>Custom: rated pressure (psi)</label><input type="number" data-k="cRated"></div>
@@ -324,8 +330,10 @@ details.std .met{color:var(--ok)}
       </div>
       <div class="big" style="margin-top:12px" id="lCalc"></div>
 
-      <h2 style="margin-top:22px">After action review</h2>
-      <p class="muted" style="margin-top:0;font-size:13px">Four questions, answered honestly and without blame. Short answers are fine — specifics beat length.</p>
+      <div class="row" style="justify-content:space-between;margin-top:22px"><h2 style="margin:0">After action review</h2><label class="chip" style="gap:4px">Detail <select class="detailSel" style="width:auto;padding:2px 4px;font-size:12px;border:0;background:transparent;color:var(--text)">
+        <option value="auto">Auto</option><option value="1">Basic</option><option value="2">Standard</option><option value="3">Full</option></select></label></div>
+      <div class="muted detailNote" style="font-size:12px;margin-top:4px"></div>
+      <p class="muted" style="margin-top:0;font-size:13px"><span data-lvl="2">Four questions, answered</span><span class="only1">Answer</span> honestly and without blame. Short answers are fine — specifics beat length.</p>
 
       <h3>1 · What was supposed to happen?</h3>
       <div class="grid">
@@ -340,10 +348,10 @@ details.std .met{color:var(--ok)}
       <div id="lDiff"></div>
       <textarea name="aarActual" rows="3" class="aar" placeholder="Sequence of events. What did you see, do and decide? Note times or pressures where something changed."></textarea>
 
-      <h3>3 · Why was there a difference?</h3>
-      <textarea name="aarWhy" rows="2" class="aar" placeholder="Root causes, not symptoms. Planning, equipment, skill, conditions, communication or team? Ask “why” until it stops being useful."></textarea>
+      <div data-lvl="2"><h3>3 · Why was there a difference?</h3>
+      <textarea name="aarWhy" rows="2" class="aar" placeholder="Root causes, not symptoms. Planning, equipment, skill, conditions, communication or team? Ask “why” until it stops being useful."></textarea></div>
 
-      <h3>4 · What will we sustain and improve?</h3>
+      <h3><span data-lvl="2">4 · </span>What will we sustain and improve?</h3>
       <div class="grid">
         <div><label>Sustain — what worked</label><textarea name="aarSustain" rows="3" class="aar" placeholder="Keep doing…"></textarea></div>
         <div><label>Improve — what changes</label><textarea name="aarImprove" rows="3" class="aar" placeholder="Next time we will…"></textarea></div>
@@ -372,8 +380,8 @@ details.std .met{color:var(--ok)}
       <div class="grid">
         <div><label>Workload</label><select name="workload"><option value="">—</option><option value="1">1 · Easy</option><option value="2">2</option><option value="3">3 · Moderate</option><option value="4">4</option><option value="5">5 · Maxed out</option></select></div>
         <div><label>Stress</label><select name="stress"><option value="">—</option><option value="1">1 · Calm</option><option value="2">2</option><option value="3">3 · Alert</option><option value="4">4</option><option value="5">5 · Near panic</option></select></div>
-        <div><label>Thermal</label><select name="thermal"><option value="">—</option><option value="1">1 · Very cold</option><option value="2">2</option><option value="3">3 · OK</option><option value="4">4</option><option value="5">5 · Comfortable</option></select></div>
-        <div><label>Narcosis</label><select name="narc"><option value="">—</option><option>None</option><option>Mild</option><option>Noticeable</option><option>Strong</option></select></div>
+        <div data-lvl="2"><label>Thermal</label><select name="thermal"><option value="">—</option><option value="1">1 · Very cold</option><option value="2">2</option><option value="3">3 · OK</option><option value="4">4</option><option value="5">5 · Comfortable</option></select></div>
+        <div data-lvl="2"><label>Narcosis</label><select name="narc"><option value="">—</option><option>None</option><option>Mild</option><option>Noticeable</option><option>Strong</option></select></div>
       </div>
 
       <h3>For future reference</h3>
@@ -386,8 +394,8 @@ details.std .met{color:var(--ok)}
       <div id="lLearn"></div>
       <label style="margin-top:8px">Next dive focus</label>
       <input type="text" name="nextFocus" placeholder="The one or two things to work on next time">
-      <label style="margin-top:8px">Questions to research</label>
-      <textarea name="research" rows="2" class="aar" placeholder="What do you want to understand better after this dive?"></textarea>
+      <div data-lvl="2"><label style="margin-top:8px">Questions to research</label>
+      <textarea name="research" rows="2" class="aar" placeholder="What do you want to understand better after this dive?"></textarea></div>
       <div class="row" style="margin-top:12px">
         <button type="submit" class="btn pri" id="logSave">Save dive</button>
         <span class="muted" id="logMsg"></span>
@@ -449,7 +457,7 @@ details.std .met{color:var(--ok)}
   </div>
 </div>
 <div id="updateToast" class="toast" hidden role="status"><span>A new version of Instar is ready.</span><button class="btn sm pri" id="updateBtn">Reload</button></div>
-<div class="foot">Planning aid only. Verify every plan against your training agency's standards and your own tables/computer.</div>
+<div class="foot">Instar v2 · Planning aid only. Verify every plan against your training agency's standards and your own tables/computer.</div>
 </main>
 
 <script>
@@ -984,6 +992,7 @@ const STUDY={inc_freeflow:"Regulator free-flow response and valve-shutdown seque
   inc_limit:"Depth/time discipline and the contingency schedules for this profile",inc_ears:"Equalization technique and descent rate; when to abort",
   inc_thermal:"Exposure protection and thermal limits for this water",inc_gear:"Equipment retention, clipping and pre-dive checks"};
 function renderAarAux(){
+  logDetail();
   const d=formData();
   // plan vs actual
   const c=logCalc(d), diffs=[];
@@ -1005,7 +1014,7 @@ function blankForm(diver){
   diver = diver || S.active;
   const last = [...S.log].reverse().find(d=>d.diver===diver);
   const base = {credits:[], date:today(), diver, site:"", water:"33", temp:"", vis:"", expo:EXPOSURE[2], expoNote:"", weight:"", tank:(S.plan?.team?.[0]?.tank)||"al80", o2:21,
-    cCap:S.plan?.cCap??80, cRated:S.plan?.cRated??3000, cCount:S.plan?.cCount??1, start:"", end:"", maxD:"", avgD:"", time:"", stage:""};
+    cCap:S.plan?.cCap??80, cRated:S.plan?.cRated??3000, cCount:S.plan?.cCount??1, start:"", end:"", maxD:"", avgD:"", time:"", stage:currentInstar(diver)};
   if(last) ["site","water","expo","expoNote","weight","tank","o2","cCap","cRated","cCount"].forEach(k=>base[k]=last[k]);
   editId=null; $("#logFormTitle").textContent="Log a dive"; $("#logSave").textContent="Save dive";
   fillForm(base);
@@ -1026,7 +1035,7 @@ function renderLog(){
   $("#lDiver").innerHTML = opt(S.divers.map(d=>[d.id,d.name]), cur.diver||S.active);
   $("#lExpo").innerHTML = opt(EXPOSURE.map(e=>[e,e]), cur.expo||EXPOSURE[2]);
   $("#lTank").innerHTML = opt(TANKS.map(t=>[t.id,t.name]), cur.tank||"al80");
-  $("#lStage").innerHTML = `<option value="">—</option>`+opt(STAGES.map(s=>[s.n,`${s.n}. ${s.t}`]), cur.stage);
+  $("#lStage").innerHTML = opt(STAGES.map(s=>[s.n,`${s.n}. ${s.t}`]), cur.stage || currentInstar(cur.diver||S.active));
   // summary
   let sum = `<h2>Consumption summary</h2>`;
   S.divers.forEach(dv=>{
@@ -1326,7 +1335,8 @@ function planCalc(){
   const lim = limits.reduce((a,b)=>b[1]<a[1]?b:a);
   // contingency schedules (all levels): deeper, longer, user excursion
   const bt=num(P.bt)||0;
-  const cont = D>0 && bt>0 ? [["As planned (reference)",D,bt],["5 min longer",D,bt+5],["10 min longer",D,bt+10],["20 ft deeper",D+20,bt]].map(([lab,d,t])=>{
+  // The most likely errors are one increment past plan: the next deeper depth (+10 ft) and the next longer time (+5 min)
+  const cont = D>0 && bt>0 ? [["10 ft deeper",D+10,bt],["5 min longer",D,bt+5]].map(([lab,d,t])=>{
     const s=decoPlan(modelOpts(d,t)); if(s.error) return {lab,d,t,err:s.error};
     const ata_d=d/W+1;
     const bgUse = members.map(x=>({x, psi: Math.ceil(x.sac*(s.use.bottom||0)/x.tk.tf*100/100)*100}));
@@ -1390,7 +1400,8 @@ function sacOptions(diverId, cur){
 function renderPlan(){
   const P=PL();
   document.querySelectorAll("#v-plan [data-k]").forEach(el=>{ const v=P[el.dataset.k]; el.value = v==null?"":v; });
-  $("#pStage").innerHTML = `<option value="">—</option>`+STAGES.map(s=>`<option value="${s.n}" ${String(P.stage)===String(s.n)?"selected":""}>${s.n}. ${s.t}</option>`).join("");
+  if(!P.stage) P.stage = Math.min(...P.team.map(m=>currentInstar(m.diver)));
+  $("#pStage").innerHTML = STAGES.map(s=>`<option value="${s.n}" ${String(P.stage)===String(s.n)?"selected":""}>${s.n}. ${s.t}</option>`).join("");
   // team
   $("#pTeam").innerHTML = P.team.map((m,i)=>`
     <div class="gate" style="margin-top:${i?8:0}px">
@@ -1480,20 +1491,22 @@ function renderGfWhy(r){
 const stopStr = s => s.noDeco ? "No stops required" : s.stops.map(x=>`${x.d}′ ${x.t}${x.sw?` (${gasName(x.g)})`:""}`).join(" · ");
 
 function renderPlanOut(){
-  const P=PL(), r=planCalc();
+  const P=PL(), r=planCalc(); const det=planDetail();
+  $("#pAssume").innerHTML = `Kept simple for this instar: <b>${P.rule==="all"?"ascend at rock bottom":P.rule==="half"?"turn at half of usable gas":"turn at a third of usable gas"}</b>; rock bottom assumes two divers at ${num(P.stress)===0?"2× their SAC":(+P.stress).toFixed(2)+" cfm each"} under stress, ${P.ptime} min to sort out a problem, then ${P.arate} ft/min to the surface. Set Detail to Standard to change these.`;
   $("#pCustom").style.display = P.team.some(m=>m.tank==="custom")||(P.adv.dg&&(P.dg||[]).some(g=>g.tank==="custom"))?"grid":"none";
   renderGfWhy(r); renderSiteNotes();
   const gname = gasName({o2:r.fo2,he:r.fhe});
-  $("#pO2Lbl").textContent = `${gname} · MOD ${Math.floor(r.mod)} ft @ ${(+P.po2).toFixed(1)} · ${r.rho.toFixed(1)} g/L at ${r.D} ft`;
+  const maxD=Math.floor(Math.min(r.mod,r.densMax)), byDens=r.densMax<r.mod;
+  $("#pO2Lbl").textContent = det.lvl===1 ? `${gname} · max depth ${maxD} ft (${byDens?"gas density":"pO₂"}) · pO₂ MOD ${Math.floor(r.mod)} · density ${Math.floor(r.densMax)}` : `${gname} · MOD ${Math.floor(r.mod)} ft @ ${(+P.po2).toFixed(1)} · ${r.rho.toFixed(1)} g/L at ${r.D} ft`;
   const tblTxt = r.tblNdl===Infinity?"no limit":r.tblNdl!=null?`${r.tblNdl} min`:(r.fhe>0?"n/a (helium)":"beyond table");
   const mTxt = r.mNDL===Infinity?"no limit":`${r.mNDL} min`;
   const ndlCard = P.adv.ds
     ? `<div class="big"><div class="k">Decompression</div><div class="v">${r.sched&&!r.sched.error?(r.sched.noDeco?"None":`${r.sched.decoT} <small>min stops</small>`):"—"}</div><div class="s">Model NDL ${mTxt} · Table ${tblTxt}</div></div>`
     : `<div class="big"><div class="k">No-deco limit</div><div class="v">${r.ndl===Infinity?"No limit":`${r.ndl} min`}</div><div class="s">Table ${tblTxt}${r.ndlRow?(r.fo2>0.21?` (${gasName({o2:r.fo2,he:0})}: EAD ${Math.max(0,Math.round(r.ead))} ft → ${r.ndlRow[0]} ft row)`:` (air, ${r.ndlRow[0]} ft row)`):""} · Model GF ${r.gf.hi}: ${mTxt}. Uses the shorter.</div></div>`;
   $("#pProfile").innerHTML = ndlCard + `
-    <div class="big"><div class="k">Gas: ${gname}</div><div class="v">${r.po2.toFixed(2)} <small>pO₂</small></div><div class="s">MOD at ${(+P.po2).toFixed(1)}: ${Math.floor(r.mod)} ft${r.fo2<0.18?` · min depth ${Math.ceil(r.minOD)} ft (hypoxic)`:""}</div></div>
-    <div class="big"><div class="k">Gas density</div><div class="v" style="color:${r.rho>6.2?"var(--bad)":r.rho>5.2?"var(--warn)":"inherit"}">${r.rho.toFixed(2)} <small>g/L at ${r.D} ft</small></div><div class="s">Max depth at ${r.densLim} g/L: ${Math.floor(r.densMax)} ft${r.densLim<6.2?` · at 6.2: ${Math.floor(r.densHardMax)} ft`:""}</div></div>
-    <div class="big"><div class="k">Depth limited by</div><div class="v">${Math.floor(Math.min(r.mod,r.densMax))} <small>ft · ${r.mod<=r.densMax?"pO₂ MOD":"gas density"}</small></div><div class="s">MOD ${Math.floor(r.mod)} ft · density ${Math.floor(r.densMax)} ft${P.adv.tmx?` · END ${Math.max(0,Math.round(r.endFt))} ft`:""}</div></div>
+    <div class="big" data-lvl="2"><div class="k">Gas: ${gname}</div><div class="v">${r.po2.toFixed(2)} <small>pO₂</small></div><div class="s">MOD at ${(+P.po2).toFixed(1)}: ${Math.floor(r.mod)} ft${r.fo2<0.18?` · min depth ${Math.ceil(r.minOD)} ft (hypoxic)`:""}</div></div>
+    <div class="big" data-lvl="2"><div class="k">Gas density</div><div class="v" style="color:${r.rho>6.2?"var(--bad)":r.rho>5.2?"var(--warn)":"inherit"}">${r.rho.toFixed(2)} <small>g/L at ${r.D} ft</small></div><div class="s">Max depth at ${r.densLim} g/L: ${Math.floor(r.densMax)} ft${r.densLim<6.2?` · at 6.2: ${Math.floor(r.densHardMax)} ft`:""}</div></div>
+    <div class="big" data-lvl="2"><div class="k">Depth limited by</div><div class="v">${Math.floor(Math.min(r.mod,r.densMax))} <small>ft · ${r.mod<=r.densMax?"pO₂ MOD":"gas density"}</small></div><div class="s">MOD ${Math.floor(r.mod)} ft · density ${Math.floor(r.densMax)} ft${P.adv.tmx?` · END ${Math.max(0,Math.round(r.endFt))} ft`:""}</div></div>
     <div class="big"><div class="k">Bottom time limited by</div><div class="v">${r.lim[1]===Infinity?"—":Math.floor(r.lim[1])} <small>min · ${r.lim[0]}</small></div><div class="s">Gas ${Math.floor(r.gasMin)}${r.ndl!=null?` · NDL ${r.ndl===Infinity?"none":r.ndl}`:""} · Planned ${P.bt||"—"}</div></div>`;
   // trimix helper
   if(P.adv.tmx){
@@ -1553,7 +1566,7 @@ function renderPlanOut(){
     <tr><td>5-min use</td>${r.members.map(x=>`<td>${f0(x.five)}</td>`).join("")}</tr>
     <tr class="hl"><td>Rock bottom${r.rbTarget?`<div class="muted">to ${r.rbTarget} ft switch</div>`:""}</td>${r.members.map(x=>`<td>${f0(x.rb)}</td>`).join("")}</tr>
     <tr><td>Usable</td>${r.members.map(x=>`<td>${f0(x.usable)}<div class="muted">${f1(x.usable_cf)} cf</div></td>`).join("")}</tr>
-    <tr class="hl2"><td>${turnLbl}</td>${r.members.map(x=>`<td>${f0(x.turn)}</td>`).join("")}</tr>
+    <tr class="hl2" ${P.rule==="all"?'data-lvl="2"':""}><td>${turnLbl}</td>${r.members.map(x=>`<td>${f0(x.turn)}</td>`).join("")}</tr>
     <tr><td>Time at depth</td>${r.members.map(x=>`<td>${Math.floor(x.gasMin)} min</td>`).join("")}</tr>
     ${hasPlan?`<tr><td>Planned back-gas use<div class="muted">whole profile</div></td>${r.members.map(x=>`<td style="color:${x.planBg+x.rb>x.fill?"var(--bad)":"inherit"}">${f0(x.planBg)}</td>`).join("")}</tr>`:""}
   </table></div>
@@ -1660,9 +1673,11 @@ function briefText(r){
   L.push(`Environment: ${+P.water===34?"fresh":"salt"} water${P.temp?`, ${P.temp}°F`:""}${P.vis?`, vis ${P.vis} ft`:""}, current ${String(P.current).toLowerCase()}, ${String(P.light).toLowerCase()}`);
   if(P.entry) L.push(`Entry/exit: ${P.entry}`);
   if(P.route) L.push(`Route/hazards: ${P.route}`);
-  L.push(`Profile: max ${r.D} ft, bottom time ${P.bt} min, ${gname} (pO₂ ${r.po2.toFixed(2)}, MOD ${Math.floor(r.mod)} ft${r.fhe>0?`, END ${Math.round(r.endFt)} ft`:""})`);
-  L.push(`Gas density: ${r.rho.toFixed(2)} g/L (limit ${r.densLim}, max ${Math.floor(r.densMax)} ft)`);
-  L.push(`Model: Bühlmann ZHL-16C GF ${r.gf.lo}/${r.gf.hi}${r.gf.factors.length?` (factors: ${r.gf.factors.join(", ")})`:""}`);
+  const lvlB=+($("#v-plan").dataset.detail||3);
+  L.push(`Profile: max ${r.D} ft, bottom time ${P.bt} min, ${gname} (${lvlB>=2?`pO₂ ${r.po2.toFixed(2)}, `:""}max depth ${Math.floor(Math.min(r.mod,r.densMax))} ft — MOD ${Math.floor(r.mod)}, density ${Math.floor(r.densMax)}${r.fhe>0?`, END ${Math.round(r.endFt)} ft`:""})`);
+  const lvl=+($("#v-plan").dataset.detail||3);
+  if(lvl>=2){ L.push(`Gas density: ${r.rho.toFixed(2)} g/L (limit ${r.densLim}, max ${Math.floor(r.densMax)} ft)`);
+    L.push(`Model: Bühlmann ZHL-16C GF ${r.gf.lo}/${r.gf.hi}${r.gf.factors.length?` (factors: ${r.gf.factors.join(", ")})`:""}`); }
   if(!P.adv.ds) L.push(`NDL: ${r.ndl===Infinity?"no limit":r.ndl+" min"} · Ascent ${P.arate} ft/min · Stop: ${P.stop}`);
   if(P.adv.dg && r.dgs.length) L.push(`Deco gases: ${r.dgs.map(g=>`${g.name} @ ${g.sw} ft (${g.tk.name}, ${g.fill} psi)`).join("; ")}`);
   if(P.adv.ds && r.sched && !r.sched.error) L.push(`Deco: ${stopStr(r.sched)} · ${r.sched.decoT} min stops · RT ${Math.ceil(r.sched.rt)} · CNS ${Math.round(r.sched.cns)}% · ${Math.round(r.sched.otu)} OTU`);
@@ -1673,7 +1688,7 @@ function briefText(r){
   const showLight = P.light!=="Day" || +P.stage===4 || +P.stage>=8;
   Object.keys(CONT_LABELS).filter(k=>k!=="light"||showLight).forEach(k=>L.push(`${CONT_LABELS[k]}: ${P.cont[k]??CONT_DEFAULT[k]}`));
   L.push(``,`CONTINGENCY SCHEDULES (end the dive and follow)`);
-  r.cont.filter(c=>!/reference/.test(c.lab)).forEach(c=>{ if(!c.err) L.push(`${c.lab} (${c.d} ft/${c.t} min): ${stopStr(c.s)}${c.s.noDeco?"":` — ${c.s.decoT} min, ratio ${c.ratio.toFixed(2)}:1`}`); });
+  r.cont.forEach(c=>{ if(!c.err) L.push(`${c.lab} (${c.d} ft/${c.t} min): ${stopStr(c.s)}${c.s.noDeco?"":` — ${c.s.decoT} min, ratio ${c.ratio.toFixed(2)}:1`}`); });
   return L.join("\n");
 }
 
@@ -1833,6 +1848,42 @@ $("#pLog").onclick=()=>{
   $("#logForm").scrollIntoView({behavior:"smooth"});
 };
 
+
+
+/* ---------------- DETAIL LEVEL (progressive disclosure by instar) ---------------- */
+// Basic = instars 1–2, Standard = 3–6, Full = 7+. "Auto" follows the instar; any level can be forced.
+const DETAIL_NAME={1:"Basic",2:"Standard",3:"Full"};
+const lvlFor=n=>n<=2?1:n<=6?2:3;
+function currentInstar(diver){ for(let n=1;n<=10;n++) if(!stageStatus(diver,n).complete) return n; return 10; }
+function detailFor(instar, forceFull){
+  const pick=S.detail||"auto";
+  if(pick!=="auto") return {lvl:+pick, auto:false, instar};
+  return {lvl: forceFull?3:lvlFor(instar), auto:true, instar, forced:forceFull};
+}
+function applyDetail(sectionId, d){
+  const sec=$(sectionId); if(!sec) return;
+  sec.dataset.detail=d.lvl;
+  sec.querySelectorAll(".detailSel").forEach(s=>s.value=S.detail||"auto");
+  const note=sec.querySelector(".detailNote");
+  if(note) note.textContent = d.auto
+    ? (d.forced ? `Showing Full detail because advanced planning is switched on.` : `${DETAIL_NAME[d.lvl]} detail for Instar ${d.instar}${d.lvl<3?" — more appears as the instar rises.":"."}`)
+    : `${DETAIL_NAME[d.lvl]} detail (set manually). Choose Auto to follow the instar.`;
+}
+function planDetail(){
+  const P=PL(); const inst = +P.stage || Math.min(...P.team.map(m=>currentInstar(m.diver)));
+  const d=detailFor(inst, P.adv && (P.adv.tmx||P.adv.dg||P.adv.ds));
+  applyDetail("#v-plan", d); return d;
+}
+function logDetail(){
+  const f=$("#logForm"); if(!f) return {lvl:3};
+  const st=+f.elements.stage.value, dv=f.elements.diver.value;
+  const d=detailFor(st || (dv?currentInstar(dv):1), false);
+  applyDetail("#v-log", d); return d;
+}
+document.addEventListener("change",e=>{
+  if(!e.target.classList.contains("detailSel")) return;
+  S.detail=e.target.value; save(); renderPlan(); logDetail();
+});
 
 /* ---------------- TABS ---------------- */
 function showTab(t){
