@@ -37,6 +37,26 @@ GitHub Pages serves over HTTPS, which installing and offline use both require.
 - **Android (Chrome):** tap **Install app** in the header and confirm.
 - **Desktop (Chrome / Edge):** tap **Install app**, or use the install icon in the address bar.
 
+## What's new in version 4
+
+**Travel gas and stages**
+- Travel gas for the descent, with an automatic switch depth (the deepest 10 ft step within pO₂, density and END limits), reused on the ascent.
+- Bottom stages filled with the bottom gas. Rules: thirds and dropped (⅓ out, ⅓ back, ⅓ kept), or carried to ⅓ or to 500 psi.
+- Rock bottom stays on back gas, to the first depth where a different gas is available.
+
+**Dive run**
+- Every gas in the order you breathe it: travel → stages out → back gas to turn → stages back → back-gas return → deco gases.
+- The team switches together on run time. The diver whose gas runs out first sets each time; each diver sees their own expected pressure.
+- Drop, return and turn pressures can be edited in the run to find where a plan falls short.
+- The brief lists the dive run as numbered steps.
+
+**Warnings**
+- Red: would kill if not fixed (running out of gas, hypoxic gas).
+- Amber: dangerous, escalating, or affects divers differently (pO₂, density, narcosis, oxygen exposure, no-deco limits, gas past the planned return portion, training readiness).
+
+**Training**
+- Stage skills with measurable standards: two-cylinder handling and time-based switches (Instar 7), open-water stage practice (Instar 8), a single bottom stage and missing-stage response (Instar 9), multiple stages and travel gas for hypoxic mixes (Instar 10).
+
 ## What's new in version 3
 
 - **Belts.** Instars are grouped into White (1–2), Blue (3–5), Purple (6–7), Brown (8–9) and Black (10), split where the consequence of a failure changes. Each completed instar is a stripe. The diver's belt and stripes show beside their name; instar tiles carry a small belt-colored mark.

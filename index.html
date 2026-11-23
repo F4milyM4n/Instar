@@ -130,6 +130,7 @@ details.std .met{color:var(--ok)}
 [data-detail="1"] [data-lvl="2"],[data-detail="1"] [data-lvl="3"],[data-detail="2"] [data-lvl="3"]{display:none !important}
 .only1{display:none}[data-detail="1"] .only1{display:revert}
 .beltmark{display:inline-block;width:10px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;box-shadow:0 0 0 1px rgba(255,255,255,.2)}
+table.run td{vertical-align:top}
 .foot{font-size:12px;color:var(--muted);text-align:center;padding:20px 0 30px}
 </style>
 </head>
@@ -176,6 +177,7 @@ details.std .met{color:var(--ok)}
       <label class="chip"><input type="checkbox" data-adv="tmx"> Trimix</label>
       <label class="chip"><input type="checkbox" data-adv="dg"> Deco gases</label>
       <label class="chip"><input type="checkbox" data-adv="ds"> Deco schedule</label>
+      <label class="chip"><input type="checkbox" data-adv="st"> Stages &amp; travel</label>
     </div>
     <div id="pSaved" style="margin-top:10px"></div>
     <div class="muted detailNote" style="font-size:12px;margin-top:6px"></div>
@@ -234,6 +236,7 @@ details.std .met{color:var(--ok)}
       <div><label>Problem time at depth</label><select data-k="ptime"><option value="1">1 min</option><option value="2">2 min</option><option value="3">3 min</option></select></div>
       <div><label>Stop in rock bottom</label><select data-k="ss"><option value="0">Excluded</option><option value="1">3 min @ 15 ft</option></select></div>
     </div>
+    <div id="pStBox" data-lvl="3"></div>
     <div id="pGas" style="margin-top:12px"></div>
     <div id="pGasAlerts"></div>
     <details style="margin-top:8px" data-lvl="2"><summary>Show the math</summary><div class="math" id="pMath"></div></details>
@@ -242,6 +245,12 @@ details.std .met{color:var(--ok)}
       <div><label>Custom: rated pressure (psi)</label><input type="number" data-k="cRated"></div>
       <div><label>Custom: cylinders</label><select data-k="cCount"><option value="1">1</option><option value="2">2</option></select></div>
     </div>
+  </div>
+
+  <div class="card" id="pRunCard">
+    <h2>Dive run</h2>
+    <p class="muted" style="margin:0 0 8px;font-size:13px">Every gas, in the order you breathe it. The team switches together on run time; the diver whose gas runs out first sets each time, so each diver's expected pressure at the end of a step can differ. Edit a pressure limit to see where the plan comes up short.</p>
+    <div id="pRun"></div>
   </div>
 
   <div class="card" id="pDecoCard">
@@ -459,7 +468,7 @@ details.std .met{color:var(--ok)}
   </div>
 </div>
 <div id="updateToast" class="toast" hidden role="status"><span>A new version of Instar is ready.</span><button class="btn sm pri" id="updateBtn">Reload</button></div>
-<div class="foot">Instar v3 · Planning aid only. Verify every plan against your training agency's standards and your own tables/computer.</div>
+<div class="foot">Instar v4 · Planning aid only. Verify every plan against your training agency's standards and your own tables/computer.</div>
 </main>
 
 <script>
@@ -563,43 +572,43 @@ const STAGES = [
  limits:["Open water only","Decompression within current qualification","Every cylinder analyzed and labeled"],
  items:[
  [["Deco schedule generation and verification","Deco gas quantity and reserve planning","Gas-switch depth/sequence and cylinder-failure contingencies","Bailout and omitted/altered deco planning"],"Prepare and independently cross-check the plan: gases, switch points, stop schedule, reserves and taught contingencies."],
- [["Stable hovering and cylinder handling during staged ascent","Task management while holding stop depth and team position"],"Maintain the required stop depth while completing a cylinder-handling or gas-switch task."],
- [["Deco cylinder rigging and identification","Analysis, labeling and verification of each cylinder","Gas-switch procedure and regulator identification"],"Demonstrate the full gas verification and switch protocol, including team confirmation and return to the correct regulator."],
+ [["Stable hovering and cylinder handling during staged ascent","Task management while holding stop depth and team position","Carrying two cylinders: deco plus a second deco or travel gas","Time-based gas switches against the dive run"],"Maintain the required stop depth while completing a cylinder-handling or gas-switch task."],
+ [["Deco cylinder rigging and identification","Analysis, labeling and verification of each cylinder","Gas-switch procedure and regulator identification","Travel gas on descent and ascent (breathable at the surface)"],"Demonstrate the full gas verification and switch protocol, including team confirmation and return to the correct regulator."],
  [["Ceilings and stop obligations","Staged ascent and variable ascent rates","Oxygen exposure management","Schedule deviations and model limits","[R] Oxygen-toxicity seizure at a stop: response and ascent decision","[R] Managing missed or omitted decompression"],"Execute the planned ascent and switches within limits; respond to a simulated schedule deviation with the taught procedure."],
- [["Tracking depth, time, stop status and active gas","Monitoring teammates' deco progress"],"At each check, correctly state depth, stop/time status, active gas and next planned action."],
+ [["Tracking depth, time, stop status and active gas","Monitoring teammates' deco progress","Comparing cylinder pressures to the dive run at each switch"],"At each check, correctly state depth, stop/time status, active gas and next planned action."],
  [["Coordinated gas switches and deco ascent","Gas sharing during deco"],"Complete a team gas-switch and ascent scenario, including a practiced contingency, without losing coordination."]
  ]},
 {n:8,t:"Intro Overhead: Cavern & Simple Wreck",env:"Cavern daylight zone, or simple wreck penetration with the exit in sight",cfg:"Configuration per cavern / intro wreck training",
  purpose:"Introduce overhead limitations and guideline discipline where the exit stays close and visible — not cave or deep wreck penetration.",pre:[4,6],
- limits:["[C] Cavern: daylight zone with direct access to the surface","[W] Wreck: light zone, exit visible; one main guideline (≤100 ft, no deco)","Continuous guideline to open water","No new decompression technique"],
+ limits:["[C] Cavern: daylight zone with direct access to the surface","[W] Wreck: light zone, exit visible; one main guideline (≤100 ft, no deco)","Continuous guideline to open water","No new decompression technique","No stages in the overhead — stage handling is practiced in open water"],
  items:[
  [["[C] Cavern limits and daylight-zone boundary","Overhead gas limits and conservative penetration","Overhead site, exit and emergency briefing","[W] Wreck research: layout, deck plans, condition and known hazards","[W] Light-zone penetration limit and exit points identified before entry","[W] Site rules and permissions (protected or war-grave wrecks)","[C] Cave entry criteria: minimum 10 ft visibility and minimum starting gas volume","[C] Cave conservation and site etiquette (landowner rules, entry procedures)"],"Brief boundaries, route, gas rule, exit plan, team order and abort criteria before entry."],
- [["Propulsion near fragile features and sediment","Body position and fin placement in restricted space","[W] Trim and propulsion that avoid silt and rust-fall; no hand contact with structure","[C] Kicks for silt, clay and percolation: backward kick and helicopter turn"],"Traverse the planned route without damaging the environment (formations or fragile wreck structure) or creating avoidable silt or rust-fall."],
+ [["Propulsion near fragile features and sediment","Body position and fin placement in restricted space","[W] Trim and propulsion that avoid silt and rust-fall; no hand contact with structure","[C] Kicks for silt, clay and percolation: backward kick and helicopter turn","Open-water stage practice: drop, pickup and exchange in trim without bottom contact"],"Traverse the planned route without damaging the environment (formations or fragile wreck structure) or creating avoidable silt or rust-fall."],
  [["Primary reel and guideline tie-offs","Line arrows/markers and etiquette","Cutting-device access and use","[W] Tie-offs on wreck structure that avoid sharp edges and line traps","[W] Running line clear of hanging cables, nets and debris","[C] Personal markers: directional arrows vs non-directional cookies; marking your exit at an intersection"],"Identify the line, markers and exit direction; demonstrate trained reel/line procedures."],
  [["Apply only decompression qualification already held"],"Show that the planned profile, gas and exit stay compatible with existing qualification limits."],
  [["Continuous awareness of boundary, exit and line","Recognizing disorientation and visibility loss","[W] Recognizing structural hazards: collapse, overhead debris, sharp metal, nets and fishing line","[W] Orienting to wreck features (bow/stern, list) and compass deviation near steel","[C] Reading flow: how outflow or inflow changes gas use going in vs coming out","[C] Light discipline as the daylight zone fades"],"Identify the exit route and boundary at all times; respond correctly to a simulated loss of orientation."],
- [["Team order and spacing on a guideline","Overhead communication and exit coordination","[W] Team order through doorways, hatches and companionways","[C] Light signals and passing on the line","[R] Unresponsive diver recovery along the guideline (horizontal tow)"],"Move as a coordinated team and execute the agreed exit response to a simulated problem."]
+ [["Team order and spacing on a guideline","Overhead communication and exit coordination","[W] Team order through doorways, hatches and companionways","[C] Light signals and passing on the line","[R] Unresponsive diver recovery along the guideline (horizontal tow)","Passing a stage to a teammate and breathing a teammate's stage while moving"],"Move as a coordinated team and execute the agreed exit response to a simulated problem."]
  ]},
 {n:9,t:"Extended Overhead",env:"Qualified cave or wreck penetration",cfg:"Guideline, redundant gas, stages as trained",
  purpose:"Develop penetration, navigation and emergency competencies where direct ascent is unavailable.",pre:[7,8],
- limits:["Penetration within specific qualification","Environment-specific gas rule (e.g. thirds of usable)","Stages only as trained"],
+ limits:["Penetration within specific qualification","Environment-specific gas rule (e.g. thirds of usable)","One bottom stage (multiple stages at Instar 10)"],
  items:[
- [["Penetration gas strategy and limits","Primary/secondary lines, jumps/gaps and navigation","Stage placement, use and retrieval","Lost-line, lost-team and exit contingencies","[W] Multi-level penetration planning: decks, vertical changes, restrictions","[W] Contingencies for silt-outs and changed structure (shifted debris, closed doors)","[C] Complex navigation planning: jumps, gaps, circuits and traverses","[C] Gas rules adjusted for flow: thirds, or stricter in siphons"],"Produce a route and gas plan with line strategy, team order, stages, turn/exit criteria and emergency actions."],
+ [["Penetration gas strategy and limits","Primary/secondary lines, jumps/gaps and navigation","Stage placement, use and retrieval","Lost-line, lost-team and exit contingencies","[W] Multi-level penetration planning: decks, vertical changes, restrictions","[W] Contingencies for silt-outs and changed structure (shifted debris, closed doors)","[C] Complex navigation planning: jumps, gaps, circuits and traverses","[C] Gas rules adjusted for flow: thirds, or stricter in siphons","Single bottom stage on thirds: ⅓ out, ⅓ back, ⅓ kept in reserve","Dive run: the team switches on time, set by the most restricted diver's supply"],"Produce a route and gas plan with line strategy, team order, stages, turn/exit criteria and emergency actions."],
  [["Precision propulsion in restrictions and silty passages","Stage drops, pickups and exchanges under control","[W] Moving through vertical penetrations and tight passages without contact","[C] Moving against flow: pull-and-glide without damaging the cave"],"Demonstrate stable trim and controlled stage handling without damaging the environment or compromising the guideline."],
  [["Penetration reel, jump/gap spools and markers","Guideline continuity and line-trap awareness","Stage and equipment stowage for restrictions","[W] Jumps and T's on wreck structure","[W] Broken and cut line repair","[W] Line-trap avoidance around doors, hatches and machinery","[C] Marking jumps and intersections with personal markers for the exit"],"Demonstrate line deployment/connection and stage handling; identify line hazards and keep a cutting tool accessible."],
  [["Integrating exit time/gas with deco obligation","Deco contingencies when exit is delayed","[W] Deco on the shot/upline or drifting under a DSMB after the penetration","[C] Sawtooth profiles: deco cost of depth changes during the penetration"],"Show that planned gas and schedule support the full exit and any deco; explain the response to delay."],
  [["3-D navigation and line position","Stage locations, restrictions and route-finding","Tracking penetration distance/time and gas vs plan","[W] 3-D orientation inside a listing or inverted hull","[W] Tracking the route through rooms, levels and turns with no exit light","[C] Reading line arrows, including a midpoint where they reverse","[C] Mental mapping during the dive and sketching the route afterward"],"Navigate the route, locate staged equipment and identify the exit without losing line awareness or exceeding limits."],
- [["Team positioning in restrictions and line work","Gas-sharing and exit coordination in overhead","Touch-contact / zero-visibility procedures","[W] Coordinating with boat/surface support, shotline and recovery","[C] Single-file restrictions: team order, gas-sharing plan and communication","[R] Gas sharing and rescue through restrictions"],"Complete a supervised simulated overhead problem, maintaining line contact, team cohesion and the exit procedure."]
+ [["Team positioning in restrictions and line work","Gas-sharing and exit coordination in overhead","Touch-contact / zero-visibility procedures","[W] Coordinating with boat/surface support, shotline and recovery","[C] Single-file restrictions: team order, gas-sharing plan and communication","[R] Gas sharing and rescue through restrictions","Missing or empty stage on the exit: team resolution within turn and rock-bottom margins"],"Complete a supervised simulated overhead problem, maintaining line contact, team cohesion and the exit procedure."]
  ]},
 {n:10,t:"Deep Technical Overhead (OC)",env:"Deep cave or complex wreck penetration",cfg:"Mixed-gas open-circuit, multiple stages",
  purpose:"Integrate deep mixed-gas, multi-cylinder and extended-overhead planning. Specialist endpoint.",pre:[9],
  limits:["Separate, specific mixed-gas qualification","Substantial experience required","Support logistics planned"],
  items:[
- [["Mixed-gas selection and analysis","Hypoxic-gas handling protocols","Multi-stage bottom/deco gas logistics","Support-team, drop-gas and surface logistics","Integrated penetration, bailout and deco planning","[W] Offshore logistics: slack water, current windows and long boat transits","[W] Weather and sea-state abort criteria","[C] Long-penetration logistics: multiple stage drops and distance","[C] Sump planning: dry sections, gear carries and re-entry"],"Produce and cross-check a complete plan: gases, MOD, stages, penetration, exit, deco, reserves and support logistics."],
+ [["Mixed-gas selection and analysis","Hypoxic-gas handling protocols","Travel gas for hypoxic bottom mixes: minimum operating depth and switch depth","Multi-stage bottom/deco gas logistics","Support-team, drop-gas and surface logistics","Integrated penetration, bailout and deco planning","[W] Offshore logistics: slack water, current windows and long boat transits","[W] Weather and sea-state abort criteria","[C] Long-penetration logistics: multiple stage drops and distance","[C] Sump planning: dry sections, gear carries and re-entry"],"Produce and cross-check a complete plan: gases, MOD, stages, penetration, exit, deco, reserves and support logistics."],
  [["Managing prolonged workload and equipment burden","Stage rotations and complex task sequences","[W] Descending the shot in current and settling workload and narcosis on arrival","[C] Pacing long penetrations and the return against flow"],"Demonstrate controlled stage rotation and task execution while maintaining depth, trim, team position and awareness."],
  [["Multiple bottom and deco stages","Advanced gas-switch verification and failure management","Drop-gas and support-system procedures","[W] Upline/shot tie-in and release per team or boat protocol","[W] Deploying a DSMB from depth in current","[C] Stage drop and pickup sequencing across a long penetration"],"Identify, verify, switch and manage all planned gases, including the response to a missing/failed cylinder."],
  [["Extended mixed-gas deco and switch sequencing","Gas sharing during deco and failure contingencies","Schedule resilience and contingency strategies","[W] Long open-water deco: drifting on a DSMB vs fixed upline or deco station","[W] Lost-shotline / free-ascent contingency","[C] Deco in the cave: habitats, dry chambers or on the line in flow"],"Execute the schedule and switches while maintaining team coordination; explain responses to specified failures."],
- [["Concurrent management of penetration, gas, depth, time, deco and team","Recognizing cumulative task loading and shrinking margins","[W] Relocating the upline at the end of the dive in poor visibility (strobe, line to shot)","[C] Tracking time, gas and distance across multiple stage segments"],"Give accurate status at checkpoints and initiate the pre-agreed response when any limit or margin is threatened."],
+ [["Concurrent management of penetration, gas, depth, time, deco and team","Recognizing cumulative task loading and shrinking margins","[W] Relocating the upline at the end of the dive in poor visibility (strobe, line to shot)","[C] Tracking time, gas and distance across multiple stage segments","Tracking each stage's pressure against the dive run at every switch"],"Give accurate status at checkpoints and initiate the pre-agreed response when any limit or margin is threatened."],
  [["Complex team order, stage logistics and support coordination","Integrated rescue within team qualification","[W] Boat pickup procedures and lost-diver-on-surface plan","[C] Support-diver roles: gas drops and deco support","[R] Rescue during long decompression: support divers and surface handoff"],"Complete rehearsed team scenarios with clear roles, communication, gas/resource tracking and coordinated exit/deco."]
  ]}
 ];
@@ -613,7 +622,7 @@ const PRE_CHECKS = {
  6:["Doubles rig assembled and checked","Valve drill practiced on land"],
  7:["Decompression procedures certification","Deco cylinder rigged and labeled"],
  8:["Cavern or intro wreck penetration certification","Guideline reel and cutting tools"],
- 9:["Cave/wreck penetration certification","Stage-cylinder training (if using stage cylinders)"],
+ 9:["Cave/wreck penetration certification","Open-water stage drop, pickup and exchange practiced (Instar 8)","Stage-cylinder training (if using stage cylinders)"],
  10:["Mixed-gas / trimix certification","Support team arranged"]
 };
 
@@ -733,6 +742,42 @@ function credBlock(diver){
    Published anchors: trim/buoyancy ±5 ft & 30° (entry) → ±3 ft & 20° (technical/overhead); valve close/open <15 s each, full drill ~2 min;
    backup light <30 s; power kicks 50 ft continuous; gas-sharing swim 200 ft; unresponsive-diver tow 100 ft. Other values are app planning standards. */
 const STANDARDS=[
+ {rx:/against the dive run|pressures? to the dive run/i,
+  d:"Checks pressure late, or more than 300 psi off the plan without saying so",
+  p:"At each planned switch time, pressure within 200 psi of the plan and stated to the team",
+  e:"Within 100 psi; calls out a trend toward a shortfall before the next switch"},
+ {rx:/dive run: the team switches/i,
+  d:"Switches on own pressure rather than the team's time",
+  p:"Team switches together at the planned run time; the limiting diver is known before the dive",
+  e:"Recalculates switch times and turn for the team after a delay or change of plan"},
+ {rx:/carrying two cylinders/i,
+  d:"Cylinders hang loose, or trim is lost while handling them",
+  p:"Both cylinders stowed; holds ±5 ft and 30° of horizontal",
+  e:"Holds ±3 ft and 20°; identifies each cylinder by touch"},
+ {rx:/open-water stage practice/i,
+  d:"Drops or picks up the stage with a depth change over 5 ft or bottom contact",
+  p:"Drop, pickup and exchange in trim within ±5 ft, no bottom contact",
+  e:"Within ±3 ft and 20° of horizontal while holding team position"},
+ {rx:/passing a stage/i,
+  d:"Hand-off needs a stop, or one diver loses depth or position",
+  p:"Passes and receives a stage while moving, within ±5 ft",
+  e:"Within ±3 ft; breathes the teammate's stage through a 100 ft swim"},
+ {rx:/single bottom stage on thirds/i,
+  d:"Drop or return pressure not planned, or not followed",
+  p:"Drops within 100 psi of the planned pressure; returns with ⅓ kept",
+  e:"Same, and adjusts the stage plan for flow or a changed turn"},
+ {rx:/multiple bottom and deco stages/i,
+  d:"Needs prompting to identify the next cylinder in the sequence",
+  p:"Identifies, verifies and switches each cylinder in order with the full protocol",
+  e:"Same, and resolves a simulated missing cylinder within 1 min"},
+ {rx:/missing or empty stage/i,
+  d:"Recognized late; no clear team plan",
+  p:"Recognized at the stage; team agrees on gas sharing or a teammate's stage within 1 min; exit stays within rock bottom",
+  e:"Resolved within 30 s with no line or depth loss; recalculated turn stated to the team"},
+ {rx:/travel gas (on descent|for hypoxic)/i,
+  d:"Switch depth unsure, or switch done without full verification",
+  p:"States the switch depth and minimum operating depth; switches within ±5 ft with the full protocol",
+  e:"Within ±3 ft; confirms each teammate's switch before moving on"},
  {rx:/unresponsive diver|unconscious diver/i,
   d:"Brings the diver up with help, or with an uncontrolled ascent",
   p:"Controlled ascent at the planned rate; diver positively buoyant and airway managed at the surface",
@@ -1178,10 +1223,12 @@ const switchDepth=(o2,W)=>Math.floor(((1.6/o2-1)*W+0.5)/10)*10;   // MOD at pO2 
 /* Simulate a square profile and its ascent. o = {depth, bt, bottom:{o2,he}, deco:[{o2,he,sw,key}], gfLo, gfHi, W, asc, desc, last} */
 function decoPlan(o){
   const W=o.W, T=tissInit(), segs=[]; let rt=0;
-  const add=(d0,d1,t,g)=>{ if(t<=0) return; tissSeg(T,d0,d1,t,g,W); segs.push({d0,d1,t,g}); rt+=t; };
+  const add=(d0,d1,t,g,ph="asc")=>{ if(t<=0) return; tissSeg(T,d0,d1,t,g,W); segs.push({d0,d1,t,g,ph}); rt+=t; };
   const descT=o.depth/o.desc;
-  add(0,o.depth,descT,o.bottom);
-  add(o.depth,o.depth,Math.max(0,o.bt-descT),o.bottom);
+  // Descent: on travel gas down to its switch depth (if carried), then bottom gas
+  if(o.travel && o.travel.sw>0){ const sw=Math.min(o.travel.sw,o.depth); add(0,sw,sw/o.desc,o.travel,"desc"); add(sw,o.depth,(o.depth-sw)/o.desc,o.bottom,"desc"); }
+  else add(0,o.depth,descT,o.bottom,"desc");
+  add(o.depth,o.depth,Math.max(0,o.bt-descT),o.bottom,"bottom");
   const gasAt=d=>{ let best=null; o.deco.forEach(g=>{ if(g.sw>=d-1e-9 && (!best||g.o2>best.o2)) best=g; }); return best; };
   let cur=o.depth, g=o.bottom, first=null; const stops=[];
   const gfAt=d=> first==null ? o.gfLo : o.gfHi+(o.gfLo-o.gfHi)*d/first;
@@ -1209,11 +1256,11 @@ function decoPlan(o){
   }
   return finish(false);
   function finish(noDeco){
-    const use={}; let cns=0, otu=0;
-    segs.forEach(sg=>{ const ata=((sg.d0+sg.d1)/2)/W+1, k=sg.g.key||"bottom"; use[k]=(use[k]||0)+ata*sg.t;
+    const use={}, useBP={}; let cns=0, otu=0;   // useBP = descent + bottom phase only (what stages can supply)
+    segs.forEach(sg=>{ const ata=((sg.d0+sg.d1)/2)/W+1, k=sg.g.key||"bottom"; use[k]=(use[k]||0)+ata*sg.t; if(sg.ph!=="asc") useBP[k]=(useBP[k]||0)+ata*sg.t;
       const po2=sg.g.o2*ata; cns+=sg.t/cnsLimit(po2)*100; if(po2>0.5) otu+=sg.t*Math.pow((po2-0.5)/0.5,0.8333); });
     const decoT = stops.reduce((a,s)=>a+s.t,0);
-    return {noDeco, stops, first, rt, decoT, use, cns, otu, segs, tts: rt-o.bt};
+    return {noDeco, stops, first, rt, decoT, use, useBP, cns, otu, segs, tts: rt-o.bt};
   }
 }
 /* Model NDL: longest bottom time (incl. descent) allowing a direct ascent within GF high */
@@ -1243,7 +1290,7 @@ const CONT_LABELS = {lost:"Lost buddy",oog:"Out of gas",fail:"Equipment failure"
 const CHECKS = [
   {g:"Team brief", team:true, items:["Goal and objectives agreed","Unified team: roles, order, signals","Equipment: configurations match","Exposure protection appropriate","Decompression: NDL, ascent rate, stops","Gas: mix, turn pressure, rock bottom","Environment: entry, exit, route, hazards"]},
   {g:"Equipment", items:["Gas analyzed, labeled, MOD confirmed","Valve(s) fully open; SPG reads start pressure","Breathe primary & backup — SPG needle steady","Inflator (and drysuit) hose connected & tested","Weights secure and checked","Computer on; gas & settings correct","Lights charged and tested","SMB, spool & cutting tool stowed","Mask, backup mask, fins"]},
-  {g:"Deco gases", deco:true, items:["Each deco cylinder analyzed & MOD-labeled","Regulators breathed; valves set per team protocol","Switch depths briefed and confirmed with team"]},
+  {g:"Deco gases", deco:true, items:["Each deco, travel and stage cylinder analyzed & MOD-labeled","Regulators breathed; valves set per team protocol","Switch depths briefed and confirmed with team"]},
   {g:"In water", items:["Bubble check","S-drill / long-hose deployment","Valve drill (doubles only)","Descent check at 10–15 ft"]}
 ];
 const PLAN_DEFAULT = ()=>({
@@ -1253,7 +1300,7 @@ const PLAN_DEFAULT = ()=>({
   team:[{diver:S.divers[0].id, tank:"al80", fill:3000, sac:0.5, expo:"5 mm wetsuit", weight:""}],
   cont:{...CONT_DEFAULT}, checks:{}, ...ADV_DEFAULT()
 });
-function ADV_DEFAULT(){ return {adv:{tmx:false,dg:false,ds:false}, he:0, endLim:100, gfMode:"suggest", gfLo:50, gfHi:80, gff:{}, lastStop:20, desc:60, dg:[], dgRes:1.5, mixStd:"standard", venue:"open", obj:[]}; }
+function ADV_DEFAULT(){ return {travel:{on:false,o2:32,he:0,tank:"al40",fill:3000,sw:"",asc:true}, stages:[], stRule:"thirds", adv:{tmx:false,dg:false,ds:false,st:false}, he:0, endLim:100, gfMode:"suggest", gfLo:50, gfHi:80, gff:{}, lastStop:20, desc:60, dg:[], dgRes:1.5, mixStd:"standard", venue:"open", obj:[]}; }
 function normalizePlan(p){ const d=ADV_DEFAULT(); for(const k in d) if(p[k]==null) p[k]=d[k]; p.adv={...d.adv,...p.adv}; if(p.dens==null) p.dens=5.2; if(!["standard","reduced"].includes(p.mixStd)) p.mixStd="standard"; if(!["suggest","shallow","conservative","custom"].includes(p.gfMode)) p.gfMode="suggest"; return p; }
 // migrate older single-tank gas settings into a plan
 function ensurePlan(){ if(S.plan) return;
@@ -1314,14 +1361,49 @@ function planCalc(){
   const asc=num(P.arate)||10, desc=num(P.desc)||60;
   const bottom={o2:fo2,he:fhe,key:"bottom"};
   const mNDL = modelNDL(D,bottom,gf.hi/100,W,asc,desc);
+  // Gas switch depth on ascent: deepest 10-ft stop within pO2 1.6 AND the density and END limits
+  const endLimS=num(P.endLim)||100;
+  const safeSwitch=(o2,he)=>{ const n2=1-o2-he, r0=o2*1.429+n2*1.251+he*0.179; let best=0;
+    for(let d=10; d<=330; d+=10){ const a=d/W+1; if(o2*a<=1.6+0.01 && r0*a<=densLim+1e-9 && (d+W)*(1-he)-W<=endLimS+1e-9) best=d; else break; } return best; };
   // deco gases
   const dgs = P.adv?.dg ? (P.dg||[]).map((g,i)=>{ const o2=Math.min(1,(num(g.o2)||50)/100), he=Math.min(1-o2,(num(g.he)||0)/100);
-      return {i,o2,he,key:"dg"+i,sw:switchDepth(o2,W),mod16:(1.6/o2-1)*W,tk:tankOf(g.tank||"al40"),fill:num(g.fill)||0,name:gasName({o2,he})}; }) : [];
+      return {i,o2,he,key:"dg"+i,sw:safeSwitch(o2,he),swPo2:switchDepth(o2,W),mod16:(1.6/o2-1)*W,tk:tankOf(g.tank||"al40"),fill:num(g.fill)||0,name:gasName({o2,he})}; }) : [];
   const usableDgs = dgs.filter(g=>g.sw>0 && g.sw<D);
-  const modelOpts = (depth,bt)=>({depth,bt,bottom,deco:usableDgs,gfLo:gf.lo/100,gfHi:gf.hi/100,W,asc,desc,last:num(P.lastStop)||20});
+  // ---- travel gas & bottom stages ----
+  const stOn = !!P.adv?.st, endLimV=num(P.endLim)||100, po2Max=num(P.po2)||1.4;
+  let trv=null;
+  if(stOn && P.travel?.on){
+    const to2=Math.min(1,Math.max(0.05,(num(P.travel.o2)||32)/100)), the=P.adv?.tmx?Math.min(1-to2,(num(P.travel.he)||0)/100):0, tn2=1-to2-the, trho0=to2*1.429+tn2*1.251+the*0.179;
+    // Auto switch: deepest 10-ft step (≤ max depth) where the travel gas stays within pO2, density and END limits
+    let autoSw=0; for(let d=Math.floor(D/10)*10; d>=10; d-=10){ const a=d/W+1; if(to2*a<=po2Max+1e-9 && trho0*a<=densLim+1e-9 && (d+W)*(1-the)-W<=endLimV+1e-9){ autoSw=d; break; } }
+    const sw = num(P.travel.sw)>0 ? Math.min(num(P.travel.sw),D) : autoSw;
+    const swA=sw/W+1;
+    trv={o2:to2,he:the,key:"travel",sw,autoSw,name:gasName({o2:to2,he:the}),tk:tankOf(P.travel.tank||"al40"),fill:num(P.travel.fill)||0,
+      asc:P.travel.asc!==false, po2Sw:to2*swA, rhoSw:trho0*swA, sw16:Math.min(safeSwitch(to2,the), Math.floor((D-1)/10)*10)};
+  }
+  const travelAsc = trv && trv.asc && trv.o2>fo2 && trv.sw16>0 ? [{o2:trv.o2,he:trv.he,key:"travel",sw:trv.sw16,name:trv.name}] : [];
+  // Stage rules. thirds: breathe 1/3 out and drop, 1/3 on the way back, keep 1/3 (overhead).
+  // carry3 / carry500: carried, not dropped — breathe down to 1/3 of fill or to 500 psi.
+  const stRule=["thirds","carry3","carry500"].includes(P.stRule)?P.stRule:"thirds";
+  const r100=v=>Math.ceil(v/100)*100;
+  const stagesInfo = stOn ? (P.stages||[]).map((s,i)=>{ const tk=tankOf(s.tank||"al80"), fill=num(s.fill)||0;
+      let drop=null, ret;
+      if(stRule==="thirds"){ drop=num(s.drop)>0?num(s.drop):r100(fill*2/3); ret=num(s.ret)>0?num(s.ret):r100(fill/3); }
+      else ret=num(s.ret)>0?num(s.ret):(stRule==="carry3"?r100(fill/3):500);
+      const out_cf=Math.max(0,fill-(drop??ret))/100*tk.tf, ret_cf=drop!=null?Math.max(0,drop-ret)/100*tk.tf:0;
+      return {i,tk,fill,drop,ret,out_cf,ret_cf,usable_cf:out_cf+ret_cf}; }) : [];
+  const stagesUsable = stagesInfo.reduce((a,s)=>a+s.usable_cf,0), stagesOut = stagesInfo.reduce((a,s)=>a+s.out_cf,0);
+  const modelOpts = (depth,bt)=>({depth,bt,bottom,deco:[...usableDgs,...travelAsc],travel:trv&&trv.sw>0?trv:null,gfLo:gf.lo/100,gfHi:gf.hi/100,W,asc,desc,last:num(P.lastStop)||20});
   const sched = P.adv?.ds && D>0 && num(P.bt)>0 ? decoPlan(modelOpts(D,num(P.bt))) : null;
   // rock-bottom target: first gas switch if deco gas carried, else surface; plus any required stops breathed on bottom gas
-  const rbTarget = usableDgs.length ? Math.max(...usableDgs.map(g=>g.sw)) : 0;
+  const rbTarget = (usableDgs.length||travelAsc.length) ? Math.max(...[...usableDgs,...travelAsc].map(g=>g.sw)) : 0;
+  // Profile gas use (ATA·min) when no schedule is computed: descent (travel then bottom gas) + bottom time
+  const btv=num(P.bt)||0, descTot=D/desc;
+  const simpleUse = (()=>{ const u={}, ub={}; const put=(k,v,bp)=>{ u[k]=(u[k]||0)+v; if(bp) ub[k]=(ub[k]||0)+v; };
+    const sw=trv&&trv.sw>0?Math.min(trv.sw,D):0;
+    if(sw){ put("travel",(sw/desc)*((sw/2)/W+1),true); if(trv.asc) put("travel",(sw/asc)*((sw/2)/W+1),false); }
+    put("bottom",((D-sw)/desc)*(((D+sw)/2)/W+1),true); put("bottom",Math.max(0,btv-descTot)*ata,true);
+    return {use:u,useBP:ub}; })();
   const bgStops = sched && !sched.error ? sched.stops.filter(s=>s.g.key==="bottom" && s.d>rbTarget) : [];
   const bgStopAtaMin = bgStops.reduce((a,s)=>a+s.t*(s.d/W+1),0);
   const ascMin=(D-rbTarget)/asc, ascAvgAta=((D+rbTarget)/2)/W+1;
@@ -1337,11 +1419,16 @@ function planCalc(){
     const usable=Math.max(0,Math.floor((fill-rb)/100)*100), usable_cf=usable/100*tk.tf;
     // planned use from the model profile (only with a schedule)
     let planBg=null, dgNeed=[];
+    // Stages supply the descent/bottom phase on bottom gas first; the rest comes from back gas
+    const U = sched && !sched.error ? sched : simpleUse;
+    const bpNeed = sac*((U.useBP||{}).bottom||0);
+    const stageDraw=[], fromStages=0, bpBack=0, bpBackPsi=0;   // filled in by the dive run below
+    const travelNeed = trv ? (()=>{ const cf=sac*((U.use||{}).travel||0)*(num(P.dgRes)||1.5); const psi=Math.ceil(cf/trv.tk.tf*100/100)*100; return {cf,psi,ok:psi<=trv.fill}; })() : null;
     if(sched && !sched.error){
-      planBg = Math.ceil((sac*(sched.use.bottom||0))/tk.tf*100/100)*100;
+      planBg = null;   // set from the dive run
       dgNeed = usableDgs.map(g=>{ const cf=sac*(sched.use[g.key]||0)*(num(P.dgRes)||1.5); const psi=Math.ceil(cf/g.tk.tf*100/100)*100; return {g,cf,psi,ok:psi<=g.fill}; });
     }
-    return {m,i,tk,fill,sac,team,rbDepth,rbAsc,rbBgStops,rbStop,rb_cf,rb_raw,rb,five_cf,five_raw,five,usable,usable_cf,planBg,dgNeed};
+    return {m,i,tk,fill,sac,team,rbDepth,rbAsc,rbBgStops,rbStop,rb_cf,rb_raw,rb,five_cf,five_raw,five,usable,usable_cf,planBg,dgNeed,bpNeed,stageDraw,fromStages,bpBack,bpBackPsi,travelNeed};
   });
   const frac = P.rule==="half"?1/2 : P.rule==="thirds"?1/3 : 1;
   const limUse = members.length ? Math.min(...members.map(x=>x.usable_cf)) : 0;
@@ -1350,9 +1437,109 @@ function planCalc(){
   members.forEach(x=>{
     if(P.rule==="all"){ x.turn=x.rb; x.allow_psi=x.fill-x.rb; }
     else { x.allow_psi_raw=allow_cf/x.tk.tf*100; x.turn=Math.ceil((x.fill-x.allow_psi_raw)/100)*100; x.allow_psi=x.fill-x.turn; }
+    x.autoTurn=x.turn;
+    if(num(x.m.turnOv)>0){ x.turn=Math.max(x.rb,r100(num(x.m.turnOv))); x.allow_psi=x.fill-x.turn; }   // edited in the dive run
     x.allowCfActual = x.allow_psi/100*x.tk.tf;
-    x.gasMin = x.sac>0 ? Math.max(0,x.allowCfActual/(x.sac*ata)) : 0;
+    x.gasMin = x.sac>0 ? Math.max(0,(x.allowCfActual+stagesOut)/(x.sac*ata)) : 0;   // outbound stage gas extends time to turn
   });
+  // ---- Shared dive run: switch times are set by whichever diver's supply runs out first ----
+  const Ush = sched && !sched.error ? sched : simpleUse;
+  const demBP=(Ush.useBP||{}).bottom||0, demAll=(Ush.use||{}).bottom||0;     // bottom-gas demand in ATA·min
+  const bgTimeline=(()=>{ const out=[];
+    if(sched && !sched.error){ let t=0; sched.segs.forEach(sg=>{ if((sg.g.key||"bottom")==="bottom") out.push({t0:t,t:sg.t,ata:((sg.d0+sg.d1)/2)/W+1}); t+=sg.t; }); }
+    else { const sw=trv&&trv.sw>0?Math.min(trv.sw,D):0, t0=sw/desc; out.push({t0,t:(D-sw)/desc,ata:((D+sw)/2)/W+1}); out.push({t0:t0+(D-sw)/desc,t:Math.max(0,btv-descTot),ata}); }
+    return out; })();
+  const rtAt=am=>{ for(const sg of bgTimeline){ const c=sg.t*sg.ata; if(am<=c+1e-9) return sg.t0+(sg.ata>0?am/sg.ata:0); am-=c; } const l=bgTimeline[bgTimeline.length-1]; return l?l.t0+l.t:0; };
+  const rtSwitch=k=>{ if(!sched||sched.error) return null; let t=0; for(const sg of sched.segs){ if(sg.ph==="asc" && sg.g.key===k) return t; t+=sg.t; } return null; };
+  const srcOf=x=>{ const L=[];
+    stagesInfo.forEach(s=>L.push({kind:"stageOut",s,from:s.fill,to:s.drop??s.ret,tf:s.tk.tf}));
+    L.push({kind:"backOut",from:x.fill,to:x.turn,tf:x.tk.tf});
+    [...stagesInfo].reverse().forEach(s=>{ if(s.drop!=null) L.push({kind:"stageBack",s,from:s.drop,to:s.ret,tf:s.tk.tf}); });
+    // After turn: the planned return portion (one share of usable gas under thirds/half), then spare gas down to rock bottom
+    const retTo=Math.max(x.rb, x.turn-Math.max(0,x.allow_psi));
+    L.push({kind:"backReturn",from:x.turn,to:retTo,tf:x.tk.tf});
+    L.push({kind:"backReserve",from:retTo,to:x.rb,tf:x.tk.tf});
+    return L; };
+  const lists=members.map(srcOf);
+  const alloc = lists.length ? lists[0].map((q0,k)=>{ let cap=Infinity, who=0;
+      lists.forEach((L,j)=>{ const sc=members[j].sac, q=L[k]; const c=sc>0?Math.max(0,q.from-q.to)/100*q.tf/sc:Infinity; if(c<cap-1e-9){cap=c;who=j;} });
+      return {cap,who}; }) : [];
+  let usedAM=0;
+  alloc.forEach(a=>{ const take=Math.max(0,Math.min(a.cap,demAll-usedAM)); a.start=usedAM; a.take=take; a.bp=Math.max(0,Math.min(take,demBP-usedAM)); a.asc=take-a.bp;
+    a.full=a.cap<Infinity && take>=a.cap-1e-9; usedAM+=take; a.t0=rtAt(a.start); a.t1=rtAt(a.start+take); });
+  const shortAM=Math.max(0,demAll-usedAM), leaveBottom=rtAt(demBP);
+  const runLimiterIdx = (()=>{ const c={}; alloc.forEach(a=>{ if(a.take>0) c[a.who]=(c[a.who]||0)+1; }); const k=Object.keys(c).sort((p,q)=>c[q]-c[p])[0]; return k==null?null:+k; })();
+  const mm=t=>`${Math.floor(t+1e-6)} min`;
+  members.forEach((x,j)=>{ x.run=buildRun(x,j); });
+  function buildRun(x,j){
+    const U=Ush, sac=x.sac, src=lists[j];
+    src.forEach((q,k)=>{ const a=alloc[k]; q.a=a; q.take=a.take*sac; q.bpTake=a.bp*sac; q.ascTake=a.asc*sac; q.cap=Math.max(0,q.from-q.to)/100*q.tf; q.end=q.from-q.take/q.tf*100; });
+    const short=shortAM*sac;
+    const steps=[];
+    const stopsOn=k=>sched&&!sched.error?sched.stops.filter(s=>s.g.key===k):[];
+    const stopTxt=k=>{ const s=stopsOn(k); return s.length?s.map(v=>`${v.d}′ ${v.t} min`).join(", "):""; };
+    const firstSwitch=rbTarget, who=k=>diverName(members[k].m.diver), team=members.length>1;
+    // 1. travel on descent
+    let trvEnd=null;
+    if(trv && trv.sw>0){ const used1=sac*((U.useBP||{}).travel||0); trvEnd=trv.fill-used1/trv.tk.tf*100;
+      const hyp=trv.sw<minOD-1e-9, hiPo2=trv.po2Sw>num(P.po2)+1e-9, hiRho=trv.rhoSw>densLim+1e-9;
+      steps.push({key:"t1",txt:`Breathe travel gas (${trv.name}) to ${trv.sw} ft`,end:trvEnd,cyl:"Travel",
+        flag: hyp?{sev:"bad",msg:`${gasName({o2:fo2,he:fhe})} is hypoxic shallower than ${Math.ceil(minOD)} ft — switch deeper`}
+            : hiPo2?{sev:"warn",msg:`Travel pO₂ ${trv.po2Sw.toFixed(2)} at the switch`}
+            : hiRho?{sev:"warn",msg:`Travel gas density ${trv.rhoSw.toFixed(1)} g/L at the switch`}:null}); }
+    else if(trv && fo2<0.18) steps.push({key:"t1",txt:`Travel gas has no usable switch depth`,end:null,flag:{sev:"bad",msg:`${gasName({o2:fo2,he:fhe})} is hypoxic shallower than ${Math.ceil(minOD)} ft`}});
+    else if(!trv && fo2<0.18) steps.push({key:"t1",txt:`No travel gas planned`,end:null,flag:{sev:"bad",msg:`${gasName({o2:fo2,he:fhe})} is hypoxic shallower than ${Math.ceil(minOD)} ft — add a travel gas`}});
+    // 2. bottom-gas sources, timed together
+    const bname=gasName({o2:fo2,he:fhe});
+    src.forEach((q,ix)=>{
+      const a=q.a, idle=a.take<=0;
+      if((q.kind==="backReserve"||q.kind==="backReturn") && idle) return;
+      const last = a.asc>0 && !alloc.slice(ix+1).some(n=>n.asc>0);
+      const leaves = a.bp>0 && a.asc>0;
+      let tail="";
+      if(!idle){
+        if(a.asc>0 && !leaves && !last) tail=" during the ascent";
+        else if(a.asc>0){ tail=`${leaves?`, leave the bottom at ${mm(leaveBottom)}`:""}${last?` and ascend to ${firstSwitch?firstSwitch+" ft":"the surface"}${stopTxt("bottom")?` (stops ${stopTxt("bottom")})`:""}`:""}`; }
+        else tail = a.full ? "" : (q.kind==="backOut"&&!stagesInfo.length ? ` until ${mm(a.t1)}` : ` and stay on it until ${mm(a.t1)}`);
+      }
+      const end1 = a.full && a.asc<=0 ? mm(a.t1) : null;
+      const limTeam = k=>{ const v=lists.map(L=>L[k].to); return new Set(v).size>1&&team ? members.map((m,i)=>`${f0(v[i])} ${who(i)}`).join(" / ") : f0(v[0]); };
+      let txt, flag=null, edit=null;
+      if(q.kind==="stageOut"){ const k=q.s.i+1, dr=q.s.drop!=null;
+        txt = `Switch to Stage ${k} (${bname}) at ${mm(a.t0)}` + (end1? ` and ${dr?"drop":"switch off"} at ${end1}`:"") + tail;
+        edit={st:`stages.${q.s.i}.${dr?"drop":"ret"}`,val:q.to,lbl:dr?"Drop pressure":"Breathe to"}; }
+      else if(q.kind==="backOut"){ const verb=P.rule==="all"?"ascend":"turn";
+        txt = `${stagesInfo.length?"Switch to":"Breathe"} back gas (${bname})${stagesInfo.length?` at ${mm(a.t0)}`:""}` + (end1?` and ${verb} at ${end1}`:"") + tail;
+        edit={turn:true,val:q.to}; }
+      else if(q.kind==="stageBack"){ const k=q.s.i+1; txt=`Switch to Stage ${k} (${bname}) at ${mm(a.t0)}`+(end1?` and switch off at ${end1}`:"")+tail; edit={st:`stages.${q.s.i}.ret`,val:q.to,lbl:"Breathe to"}; }
+      else if(q.kind==="backReturn"){ txt=`Back gas after turn at ${mm(a.t0)}`+tail; }
+      else { txt=`Back gas into spare at ${mm(a.t0)}`+tail; flag={sev:"warn",msg:`Uses ${f0(q.take/q.tf*100)} psi past the planned return gas (${f0(q.from)}), toward rock bottom (${f0(q.to)})`}; }
+      if(idle) flag={sev:"info",msg:"Not needed on this profile"};
+      const limit = !idle && a.full ? {who:a.who, txt:`${team?who(a.who)+" reaches ":""}${q.kind==="stageOut"&&q.s.drop!=null?"drop":q.kind==="backOut"?(P.rule==="all"?"rock bottom":"turn"):q.kind==="backReserve"?"rock bottom":q.kind==="backReturn"?"return-gas":q.kind==="stageBack"?"return":"breathe-to"} pressure ${limTeam(ix)}`} : null;
+      steps.push({key:"b"+ix,txt,end:q.end,cyl:q.kind.startsWith("stage")?`Stage ${q.s.i+1}`:"Back",flag,edit,src:q,limit,sets:!idle&&a.full&&a.who===j});
+    });
+    if(shortAM>0) steps.push({key:"short",txt:`Short of gas: the profile needs more bottom gas than the plan allows`,end:null,flag:{sev:"bad",msg:`≈ ${f0(short/x.tk.tf*100)} psi of back gas below rock bottom (${f1(short)} cu ft)`}});
+    // 3. travel on ascent
+    if(trv && travelAsc.length && ((U.use||{}).travel||0)>((U.useBP||{}).travel||0)){
+      const used2=sac*(((U.use||{}).travel||0)-((U.useBP||{}).travel||0)); const e=(trvEnd??trv.fill)-used2/trv.tk.tf*100, t=rtSwitch("travel");
+      const need=x.travelNeed; steps.push({key:"t2",txt:`Switch to travel gas (${trv.name}) at ${travelAsc[0].sw} ft${t!=null?` (${mm(t)})`:""}${stopTxt("travel")?` and stop ${stopTxt("travel")}`:""}`,end:e,cyl:"Travel",
+        flag:need&&!need.ok?{sev:"bad",msg:`Needs ${f0(need.psi)} psi with reserve; cylinder starts at ${f0(trv.fill)}`}:null}); }
+    // 4. deco gases, deepest switch first
+    [...usableDgs].sort((a,b)=>b.sw-a.sw).forEach((g,k)=>{
+      const n=x.dgNeed.find(d=>d.g.key===g.key); const usedCf=sac*((sched&&sched.use[g.key])||0), t=rtSwitch(g.key);
+      if(!sched||sched.error) { steps.push({key:"d"+k,txt:`Switch to deco gas ${k+1} (${g.name}) at ${g.sw} ft`,end:null,cyl:`Deco ${k+1}`}); return; }
+      steps.push({key:"d"+k,txt:`Switch to deco gas ${k+1} (${g.name}) at ${g.sw} ft${t!=null?` (${mm(t)})`:""}${stopTxt(g.key)?` and stop ${stopTxt(g.key)}`:""}`,end:g.fill-usedCf/g.tk.tf*100,cyl:`Deco ${k+1}`,
+        flag:n&&!n.ok?{sev:"bad",msg:`Needs ${f0(n.psi)} psi with reserve; cylinder starts at ${f0(g.fill)}`}:null}); });
+    // 5. surface
+    steps.push({key:"s",txt: sched&&!sched.error ? `Surface — run time ${Math.ceil(sched.rt)} min` : `Leave the bottom at ${mm(leaveBottom)}, ascend at ${P.arate} ft/min${P.stop&&P.stop!=="None planned"?`, safety stop ${P.stop}`:""} and surface`,end:null});
+    x.fromStages=src.filter(q=>q.kind.startsWith("stage")).reduce((a,q)=>a+q.take,0);
+    x.stageDraw=stagesInfo.map(s=>({s,end:Math.min(...src.filter(q=>q.s===s).map(q=>q.end))}));
+    const backUsed=src.filter(q=>q.kind.startsWith("back")).reduce((a,q)=>a+q.take,0)+short;
+    x.bpBack=backUsed; x.bpBackPsi=r100(backUsed/x.tk.tf*100);
+    if(sched && !sched.error) x.planBg=r100(backUsed/x.tk.tf*100);
+    x.short=short;
+    return steps;
+  }
   const gasMin = members.length ? Math.min(...members.map(x=>x.gasMin)) : 0;
   const tblNdl = ndlRow ? ndlRow[1] : null;
   const ndl = P.adv?.ds ? null : (tblNdl==null ? mNDL : Math.min(tblNdl, mNDL));
@@ -1364,12 +1551,12 @@ function planCalc(){
   const cont = D>0 && bt>0 ? [["10 ft deeper",D+10,bt],["5 min longer",D,bt+5]].map(([lab,d,t])=>{
     const s=decoPlan(modelOpts(d,t)); if(s.error) return {lab,d,t,err:s.error};
     const ata_d=d/W+1;
-    const bgUse = members.map(x=>({x, psi: Math.ceil(x.sac*(s.use.bottom||0)/x.tk.tf*100/100)*100}));
+    const bgUse = members.map(x=>({x, psi: Math.ceil(Math.max(0,x.sac*(s.use.bottom||0) - Math.min(stagesUsable, x.sac*((s.useBP||{}).bottom||0)))/x.tk.tf*100/100)*100}));
     const worst = bgUse.reduce((a,b)=>(b.x.fill-b.psi)<(a.x.fill-a.psi)?b:a, bgUse[0]);
     return {lab,d,t,s,ratio: s.decoT/t, bgUse, worst, mod:d>(num(P.po2)/fo2-1)*W, dens:rho0*ata_d};
   }) : [];
   return {P,D,W,fo2,fhe,fn2,ata,po2,mod,densLim,rho0,rho,densMax,densHardMax,endFt,minOD,ead,ndlRow,tblNdl,mNDL,ndl,gf,asc,desc,
-    dgs,usableDgs,sched,rbTarget,bgStops,ascMin,ascAvgAta,members,frac,limUse,limiter,allow_cf,gasMin,lim,cont};
+    dgs,usableDgs,sched,rbTarget,bgStops,ascMin,ascAvgAta,members,frac,limUse,limiter,allow_cf,gasMin,lim,cont,trv,travelAsc,stagesInfo,stagesUsable,stOn,runLimiterIdx};
 }
 // Standard bottom-mix sets.
 // Reduced set: max O2 / min He at each MOD tier; working range = previous tier's MOD to this MOD.
@@ -1453,6 +1640,7 @@ function renderPlan(){
   $("#pSaved").innerHTML = S.plans.length ? `<details><summary>Saved plans (${S.plans.length})</summary>${S.plans.map((p,i)=>
     `<div class="row" style="justify-content:space-between;margin-top:6px"><span>${esc(p.date||"")} · ${esc(p.site||"No site")} <span class="muted">· ${p.depth} ft</span></span><span class="row"><button class="btn sm" data-load="${i}">Load</button><button class="btn sm bad" data-pdel="${i}">Delete</button></span></div>`).join("")}</details>` : "";
   renderAdvStatic();
+  renderStBox();
   renderObjectives();
   const rg=$("#pO2Range"); const [mn,mx]=P.adv.tmx?[10,35]:[21,40]; rg.min=mn; rg.max=mx; rg.value=P.o2;
   $("#pO2Ticks").innerHTML=(P.adv.tmx?[10,15,20,25,30,35]:[21,25,30,35,40]).map(v=>`<span>${v}</span>`).join("");
@@ -1465,7 +1653,7 @@ function renderChecks(){
   const cols = P.team.map(m=>m.diver);
   let h="";
   CHECKS.forEach((grp,gi)=>{
-    if(grp.deco && !P.adv?.dg) return;
+    if(grp.deco && !P.adv?.dg && !P.adv?.st) return;
     const who = grp.team ? [["team","Team"]] : cols.map(id=>[id,diverName(id)]);
     h += `<h3 style="margin-top:${gi?14:0}px">${grp.g}</h3><div style="overflow-x:auto"><table class="ck"><tr><th></th>${who.map(([,n])=>`<th>${esc(n)}</th>`).join("")}</tr>`;
     grp.items.forEach((it,ii)=>{
@@ -1508,6 +1696,34 @@ function renderAdvStatic(){
     <div id="pGfWhy"></div>
     ${gf.mode==="suggest"?`<div style="margin-top:6px">${Object.entries(GF_FACTORS_MANUAL).map(([k,l])=>`<label class="chk" style="text-transform:none;letter-spacing:0;color:var(--text);margin:2px 0"><input type="checkbox" data-gff="${k}" ${P.gff?.[k]?"checked":""}> ${l}</label>`).join("")}</div>`:""}`;
 }
+function renderStBox(){
+  const P=PL(), box=$("#pStBox"); if(!box) return;
+  if(!P.adv.st){ box.innerHTML=""; return; }
+  const t=P.travel, tankOpts=cur=>TANKS.filter(x=>x.n===1).map(x=>`<option value="${x.id}" ${x.id===cur?"selected":""}>${x.name}</option>`).join("");
+  box.innerHTML=`<div class="gate" style="margin-top:12px">
+    <div class="row" style="justify-content:space-between"><b>Travel gas</b><label class="chip"><input type="checkbox" data-st="travel.on" ${t.on?"checked":""}> Carry travel gas</label></div>
+    ${t.on?`<div class="grid" style="margin-top:8px">
+      <div><label>O₂ %</label><input type="number" data-st="travel.o2" value="${t.o2}"></div>
+      ${P.adv.tmx?`<div><label>He %</label><input type="number" data-st="travel.he" value="${t.he||0}"></div>`:""}
+      <div><label>Cylinder</label><select data-st="travel.tank">${tankOpts(t.tank)}</select></div>
+      <div><label>Start psi</label><input type="number" step="100" data-st="travel.fill" value="${t.fill}"></div>
+      <div><label>Switch to bottom gas at (ft)</label><input type="number" step="10" data-st="travel.sw" value="${t.sw}" placeholder="auto" id="pTrvSw"></div>
+    </div>
+    <label class="chip" style="margin-top:8px"><input type="checkbox" data-st="travel.asc" ${t.asc!==false?"checked":""}> Also breathe it on the ascent (as a deco gas)</label>`:`<div class="muted" style="font-size:13px;margin-top:4px">Breathed from the surface on the descent — needed when the bottom gas is hypoxic, and it saves bottom gas.</div>`}
+  </div>
+  <div class="gate" style="margin-top:8px">
+    <div class="row" style="justify-content:space-between"><b>Bottom stages</b><button class="btn sm" data-addst="1">+ Stage</button></div>
+    <div class="muted" style="font-size:13px;margin-top:4px">Filled with the bottom gas and breathed first. Drop and return pressures are set by the rule below and can be edited in the Dive run.</div>
+    ${(P.stages||[]).map((s,i)=>`<div class="grid" style="margin-top:8px;align-items:end">
+      <div><label>Stage ${i+1} cylinder</label><select data-st="stages.${i}.tank">${tankOpts(s.tank)}</select></div>
+      <div><label>Start psi</label><input type="number" step="100" data-st="stages.${i}.fill" value="${s.fill}"></div>
+      <div><button class="btn sm bad" data-rmst="${i}">Remove</button></div></div>`).join("")}
+    ${(P.stages||[]).length?`<div style="margin-top:8px"><label>Stage drop rule</label><select data-st="stRule" style="width:auto">
+      <option value="thirds" ${!["carry3","carry500"].includes(P.stRule)?"selected":""}>Thirds, dropped: ⅓ out (drop at ⅔), ⅓ back, keep ⅓</option>
+      <option value="carry3" ${P.stRule==="carry3"?"selected":""}>Carried: breathe to ⅓ of fill</option>
+      <option value="carry500" ${P.stRule==="carry500"?"selected":""}>Carried: breathe to 500 psi</option></select></div>`:""}
+  </div>`;
+}
 function renderGfWhy(r){
   const gf=r.gf, el=$("#pGfWhy"); if(!el) return;
   el.innerHTML = `<p class="muted" style="margin:8px 0 0">${gf.why}</p>${gf.mode==="suggest"&&gf.auto.length?`<p class="muted" style="margin:4px 0 0">Detected from this plan: ${gf.auto.map(esc).join(" · ")}</p>`:""}`;
@@ -1520,6 +1736,7 @@ function renderPlanOut(){
   $("#pAssume").innerHTML = `Kept simple for this instar: <b>${P.rule==="all"?"ascend at rock bottom":P.rule==="half"?"turn at half of usable gas":"turn at a third of usable gas"}</b>; rock bottom assumes two divers at ${num(P.stress)===0?"2× their SAC":(+P.stress).toFixed(2)+" cfm each"} under stress, ${P.ptime} min to sort out a problem, then ${P.arate} ft/min to the surface. Set Detail to Standard to change these.`;
   $("#pCustom").style.display = P.team.some(m=>m.tank==="custom")||(P.adv.dg&&(P.dg||[]).some(g=>g.tank==="custom"))?"grid":"none";
   renderGfWhy(r); renderSiteNotes();
+  if($("#pTrvSw") && r.trv) $("#pTrvSw").placeholder=`auto: ${r.trv.autoSw||"none"} ft`;
   const gname = gasName({o2:r.fo2,he:r.fhe});
   const maxD=Math.floor(Math.min(r.mod,r.densMax)), byDens=r.densMax<r.mod;
   $("#pO2Lbl").textContent = det.lvl===1 ? `${gname} · max depth ${maxD} ft (${byDens?"gas density":"pO₂"}) · pO₂ MOD ${Math.floor(r.mod)} · density ${Math.floor(r.densMax)}` : `${gname} · MOD ${Math.floor(r.mod)} ft @ ${(+P.po2).toFixed(1)} · ${r.rho.toFixed(1)} g/L at ${r.D} ft`;
@@ -1529,8 +1746,8 @@ function renderPlanOut(){
     ? `<div class="big"><div class="k">Decompression</div><div class="v">${r.sched&&!r.sched.error?(r.sched.noDeco?"None":`${r.sched.decoT} <small>min stops</small>`):"—"}</div><div class="s">Model NDL ${mTxt} · Table ${tblTxt}</div></div>`
     : `<div class="big"><div class="k">No-deco limit</div><div class="v">${r.ndl===Infinity?"No limit":`${r.ndl} min`}</div><div class="s">Table ${tblTxt}${r.ndlRow?(r.fo2>0.21?` (${gasName({o2:r.fo2,he:0})}: EAD ${Math.max(0,Math.round(r.ead))} ft → ${r.ndlRow[0]} ft row)`:` (air, ${r.ndlRow[0]} ft row)`):""} · Model GF ${r.gf.hi}: ${mTxt}. Uses the shorter.</div></div>`;
   $("#pProfile").innerHTML = ndlCard + `
-    <div class="big" data-lvl="2"><div class="k">Gas: ${gname}</div><div class="v">${r.po2.toFixed(2)} <small>pO₂</small></div><div class="s">MOD at ${(+P.po2).toFixed(1)}: ${Math.floor(r.mod)} ft${r.fo2<0.18?` · min depth ${Math.ceil(r.minOD)} ft (hypoxic)`:""}</div></div>
-    <div class="big" data-lvl="2"><div class="k">Gas density</div><div class="v" style="color:${r.rho>6.2?"var(--bad)":r.rho>5.2?"var(--warn)":"inherit"}">${r.rho.toFixed(2)} <small>g/L at ${r.D} ft</small></div><div class="s">Max depth at ${r.densLim} g/L: ${Math.floor(r.densMax)} ft${r.densLim<6.2?` · at 6.2: ${Math.floor(r.densHardMax)} ft`:""}</div></div>
+    <div class="big" data-lvl="2"><div class="k">Gas: ${gname}</div><div class="v" style="color:${r.D>r.mod?"var(--warn)":"inherit"}">${r.po2.toFixed(2)} <small>pO₂</small></div><div class="s">MOD at ${(+P.po2).toFixed(1)}: ${Math.floor(r.mod)} ft${r.fo2<0.18?` · <span style="color:var(--bad)">min depth ${Math.ceil(r.minOD)} ft (hypoxic)</span>`:""}</div></div>
+    <div class="big" data-lvl="2"><div class="k">Gas density</div><div class="v" style="color:${r.rho>r.densLim?"var(--warn)":"inherit"}">${r.rho.toFixed(2)} <small>g/L at ${r.D} ft</small></div><div class="s">Max depth at ${r.densLim} g/L: ${Math.floor(r.densMax)} ft${r.densLim<6.2?` · at 6.2: ${Math.floor(r.densHardMax)} ft`:""}</div></div>
     <div class="big" data-lvl="2"><div class="k">Depth limited by</div><div class="v">${Math.floor(Math.min(r.mod,r.densMax))} <small>ft · ${r.mod<=r.densMax?"pO₂ MOD":"gas density"}</small></div><div class="s">MOD ${Math.floor(r.mod)} ft · density ${Math.floor(r.densMax)} ft${P.adv.tmx?` · END ${Math.max(0,Math.round(r.endFt))} ft`:""}</div></div>
     <div class="big"><div class="k">Bottom time limited by</div><div class="v">${r.lim[1]===Infinity?"—":Math.floor(r.lim[1])} <small>min · ${r.lim[0]}</small></div><div class="s">Gas ${Math.floor(r.gasMin)}${r.ndl!=null?` · NDL ${r.ndl===Infinity?"none":r.ndl}`:""} · Planned ${P.bt||"—"}</div></div>`;
   // trimix helper
@@ -1542,28 +1759,33 @@ function renderPlanOut(){
       : `Next tier: lower density and END for extra margin, at higher helium cost.`;
     const row=(m,full)=>`<tr style="${m.ok?"":"opacity:.55"}"><td><b>${m.name}</b>${cur===m?` <span class="pill">Selected</span>`:""}${full?"":"<br>"+role(m)}</td>
         <td>${m.lo}–${m.hi} ft</td>
-        <td style="color:${m.fails.includes("pO₂")?"var(--bad)":"inherit"}">${m.po2.toFixed(2)}</td>
-        <td style="color:${m.fails.includes("END")?"var(--bad)":"inherit"}">${Math.max(0,Math.round(m.end))}</td>
-        <td style="color:${m.fails.includes("density")?"var(--bad)":"inherit"}">${m.rho.toFixed(1)}</td>
+        <td style="color:${m.fails.includes("pO₂")?"var(--warn)":"inherit"}">${m.po2.toFixed(2)}</td>
+        <td style="color:${m.fails.includes("END")?"var(--warn)":"inherit"}">${Math.max(0,Math.round(m.end))}</td>
+        <td style="color:${m.fails.includes("density")?"var(--warn)":"inherit"}">${m.rho.toFixed(1)}</td>
         <td>${m.ok?`<button class="btn sm ${m===em.rec?"pri":""}" data-mix="${m.o2}/${m.he}">Use</button>`:`<span class="muted">${m.fails.join(", ")}</span>`}</td></tr>`;
     const head=`<tr><th>Mix</th><th>Working</th><th>pO₂</th><th>END</th><th>g/L</th><th></th></tr>`;
     $("#pTmx").innerHTML = `<div class="gate" style="margin-top:10px"><div class="row" style="justify-content:space-between"><b>Bottom mix for ${r.D} ft</b><select data-k="mixStd" style="width:auto">${Object.entries(STD_SETS).map(([k,s])=>`<option value="${k}" ${(P.mixStd||"standard")===k?"selected":""}>${s.label}</option>`).join("")}</select></div>
       ${em.shortlist.length?`<div style="overflow-x:auto;margin-top:6px"><table class="ds">${head}${em.shortlist.map(m=>row(m,false)+`<tr><td colspan="6" class="muted" style="border-top:0;padding-top:0;font-size:12px">${why(m)}</td></tr>`).join("")}</table></div>`
-        :`<div class="alert bad">No standard mix meets pO₂ ${P.po2}, END ${P.endLim||100} ft and ${P.dens} g/L at ${r.D} ft. Plan shallower rather than raising the density limit.</div>`}
-      ${em.rec&&em.rec.o2<18?`<div class="muted" style="font-size:12px;margin-top:4px">${em.rec.name} is hypoxic: minimum operating depth ${Math.ceil(em.rec.minOD)} ft (pO₂ 0.16)${em.rec.minOD>10?" — plan a travel gas for the descent":""}.</div>`:""}
+        :`<div class="alert">No standard mix meets pO₂ ${P.po2}, END ${P.endLim||100} ft and ${P.dens} g/L at ${r.D} ft. Plan shallower rather than raising the density limit.</div>`}
+      ${em.rec&&em.rec.o2<18?`<div style="font-size:12px;margin-top:4px;color:var(--bad)">${em.rec.name} is hypoxic: minimum operating depth ${Math.ceil(em.rec.minOD)} ft (pO₂ 0.16)${em.rec.minOD>10?" — plan a travel gas for the descent":""}.</div>`:""}
       <details style="margin-top:6px"><summary>All ${em.rows.length} standard mixes</summary><div style="overflow-x:auto"><table class="ds">${head}${em.rows.map(m=>row(m,true)).join("")}</table></div>
       <div class="muted" style="font-size:12px;margin-top:4px">${(P.mixStd||"standard")==="reduced"?"Reduced-set tiers are max O₂ / min He at each MOD.":"Working depths are each mix's planned range."} END counts O₂ as narcotic. Planned limits: pO₂ ${P.po2}, END ${P.endLim||100} ft, ${P.dens} g/L.</div></details>
-      <div class="muted" style="margin-top:6px">Current gas ${gasName({o2:r.fo2,he:r.fhe})}: END ${Math.max(0,Math.round(r.endFt))} ft · min operating depth ${Math.ceil(r.minOD)} ft${cur?"":" · not a standard mix (analyzed or custom)"}</div></div>`;
+      <div class="muted" style="margin-top:6px">Current gas ${gasName({o2:r.fo2,he:r.fhe})}: END ${Math.max(0,Math.round(r.endFt))} ft · ${r.fo2<0.18?`<span style="color:var(--bad)">min operating depth ${Math.ceil(r.minOD)} ft</span>`:`min operating depth ${Math.ceil(r.minOD)} ft`}${cur?"":" · not a standard mix (analyzed or custom)"}</div></div>`;
   }
   // limit alerts
   let a="";
-  if(r.D>r.mod) a+=`<div class="alert bad">Max depth ${r.D} ft exceeds MOD ${Math.floor(r.mod)} ft for ${gname} at pO₂ ${P.po2}.</div>`;
-  if(r.fo2<0.18) a+=`<div class="alert">Hypoxic bottom gas — not breathable shallower than ${Math.ceil(r.minOD)} ft; a travel gas is required for descent.</div>`;
-  if(P.adv.tmx && r.endFt>(num(P.endLim)||100)) a+=`<div class="alert bad">END ${Math.round(r.endFt)} ft exceeds the ${P.endLim||100} ft limit.</div>`;
-  if(!P.adv.ds && r.ndl!=null && r.ndl!==Infinity && num(P.bt)>r.ndl) a+=`<div class="alert bad">Planned bottom time ${P.bt} min exceeds the ${r.ndl}-min no-deco limit${P.adv.ds?"":" — turn on Deco schedule only if this is a planned decompression dive"}.</div>`;
-  if(r.rho>6.2) a+=`<div class="alert bad">Gas density ${r.rho.toFixed(2)} g/L exceeds the 6.2 g/L absolute maximum — high risk of CO₂ retention.</div>`;
+  if(r.D>r.mod) a+=`<div class="alert">Max depth ${r.D} ft exceeds MOD ${Math.floor(r.mod)} ft for ${gname} at pO₂ ${P.po2}.</div>`;
+  if(r.fo2<0.18 && !(r.trv&&r.trv.sw>0)) a+=`<div class="alert bad">Hypoxic bottom gas — not breathable shallower than ${Math.ceil(r.minOD)} ft; a travel gas is required for descent.</div>`;
+  if(r.trv){ const t=r.trv;
+    if(!t.sw) a+=`<div class="alert">Travel gas ${t.name} has no usable switch depth within your pO₂, density and END limits.</div>`;
+    else { if(t.sw<r.minOD) a+=`<div class="alert bad">Travel switch at ${t.sw} ft is shallower than ${gasName({o2:r.fo2,he:r.fhe})}'s minimum operating depth (${Math.ceil(r.minOD)} ft) — the bottom gas would be hypoxic at the switch.</div>`;
+      if(t.po2Sw>num(P.po2)+1e-9) a+=`<div class="alert">Travel gas pO₂ is ${t.po2Sw.toFixed(2)} at the ${t.sw} ft switch — over ${P.po2}.</div>`;
+      if(t.rhoSw>r.densLim+1e-9) a+=`<div class="alert">Travel gas density is ${t.rhoSw.toFixed(1)} g/L at the ${t.sw} ft switch.</div>`; } }
+  if(P.adv.tmx && r.endFt>(num(P.endLim)||100)) a+=`<div class="alert">END ${Math.round(r.endFt)} ft exceeds the ${P.endLim||100} ft limit.</div>`;
+  if(!P.adv.ds && r.ndl!=null && r.ndl!==Infinity && num(P.bt)>r.ndl) a+=`<div class="alert">Planned bottom time ${P.bt} min exceeds the ${r.ndl}-min no-deco limit${P.adv.ds?"":" — turn on Deco schedule only if this is a planned decompression dive"}.</div>`;
+  if(r.rho>6.2) a+=`<div class="alert">Gas density ${r.rho.toFixed(2)} g/L exceeds the 6.2 g/L absolute maximum — high risk of CO₂ retention.</div>`;
   else if(r.rho>r.densLim) a+=`<div class="alert">Gas density ${r.rho.toFixed(2)} g/L exceeds the ${r.densLim} g/L limit (max ${Math.floor(r.densMax)} ft on this gas).</div>`;
-  if(!P.adv.ds && !r.ndlRow && r.fhe===0) a+=`<div class="alert bad">Depth is beyond the air no-decompression table; NDL shown is from the model only.</div>`;
+  if(!P.adv.ds && !r.ndlRow && r.fhe===0) a+=`<div class="alert">Depth is beyond the air no-decompression table; NDL shown is from the model only.</div>`;
   if(num(P.bt)>r.gasMin) a+=`<div class="alert bad">Planned bottom time ${P.bt} min exceeds the ${Math.floor(r.gasMin)} min of gas available at ${r.D} ft before the ${P.rule==="all"?"rock-bottom ascent":"turn"} (limiting diver).</div>`;
   if(P.stage){
     P.team.forEach(m=>{
@@ -1580,9 +1802,14 @@ function renderPlanOut(){
     const bad=credStatus(m.diver).filter(s=>!s.ok);
     if(bad.length && (+P.stage>=2 || !P.stage)) a+=`<div class="alert">${esc(diverName(m.diver))}: ${bad.map(s=>`${s.label} ${s.exp?"expired "+s.exp:"not recorded"}`).join("; ")} (Training tab → readiness).</div>`;
     if(P.adv.ds && !stageStatus(m.diver,6).complete) a+=`<div class="alert">${esc(diverName(m.diver))} hasn't completed Instar 6 — planned decompression is a Instar 7 activity.</div>`;
+    if(P.adv.st && (P.stages||[]).length && !stageStatus(m.diver,8).complete) a+=`<div class="alert">${esc(diverName(m.diver))} hasn't completed Instar 8 — bottom stages are an Instar 9 activity (open-water stage practice comes first).</div>`;
+    if(P.adv.st && P.travel&&P.travel.on && !stageStatus(m.diver,6).complete) a+=`<div class="alert">${esc(diverName(m.diver))} hasn't completed Instar 6 — travel and deco cylinder handling start at Instar 7.</div>`;
     if(P.adv.tmx && r.fhe>0 && !stageStatus(m.diver,9).complete) a+=`<div class="alert">${esc(diverName(m.diver))} hasn't completed Instar 9 — mixed gas is a Instar 10 activity.</div>`;
   });
-  $("#pLimitAlerts").innerHTML=a;
+  // life-threatening (red) first, then amber; one-line key
+  const parts=a.split(/(?=<div class="alert)/).filter(Boolean);
+  const reds=parts.filter(x=>x.startsWith('<div class="alert bad')), ambers=parts.filter(x=>!x.startsWith('<div class="alert bad'));
+  $("#pLimitAlerts").innerHTML = parts.length ? reds.join("")+ambers.join("")+`<div class="muted" style="font-size:12px;margin-top:6px"><span style="color:var(--bad)">■</span> Red: would kill if not fixed — running out of gas, hypoxic gas. <span style="color:var(--warn)">■</span> Amber: dangerous, a step toward a bigger problem, or affects divers differently — pO₂, density, narcosis, oxygen exposure, no-deco limits, reserve use, training readiness.</div>` : "";
   // gas table
   const turnLbl = P.rule==="all" ? "Ascend at" : "Turn at";
   const hasPlan = r.members.some(x=>x.planBg!=null);
@@ -1593,26 +1820,53 @@ function renderPlanOut(){
     <tr><td>Usable</td>${r.members.map(x=>`<td>${f0(x.usable)}<div class="muted">${f1(x.usable_cf)} cf</div></td>`).join("")}</tr>
     <tr class="hl2" ${P.rule==="all"?'data-lvl="2"':""}><td>${turnLbl}</td>${r.members.map(x=>`<td>${f0(x.turn)}</td>`).join("")}</tr>
     <tr><td>Time at depth</td>${r.members.map(x=>`<td>${Math.floor(x.gasMin)} min</td>`).join("")}</tr>
-    ${hasPlan?`<tr><td>Planned back-gas use<div class="muted">whole profile</div></td>${r.members.map(x=>`<td style="color:${x.planBg+x.rb>x.fill?"var(--bad)":"inherit"}">${f0(x.planBg)}</td>`).join("")}</tr>`:""}
+
+    ${r.trv?`<tr><td>Travel gas needed<div class="muted">${r.trv.name} · ${num(P.dgRes)===2?"×2":"+50%"}</div></td>${r.members.map(x=>`<td style="color:${x.travelNeed.ok?"inherit":"var(--bad)"}">${f0(x.travelNeed.psi)}</td>`).join("")}</tr>`:""}
+
+    ${hasPlan?`<tr><td>Planned back-gas use<div class="muted">whole profile${r.stOn&&r.stagesInfo.length?", after stages":""}</div></td>${r.members.map(x=>`<td style="color:${x.planBg+x.rb>x.fill?"var(--bad)":"inherit"}">${f0(x.planBg)}</td>`).join("")}</tr>`:""}
   </table></div>
-  <p class="muted" style="margin:6px 0 0">All pressures in psi, rounded to 100 (use & rock bottom up, usable down, turn up).${r.members.length>1&&P.rule!=="all"?` Turn pressures are gas-matched to ${esc(diverName(r.limiter.m.diver))}'s usable gas.`:""}${r.bgStops.length?` Rock bottom includes ${r.bgStops.reduce((a,s)=>a+s.t,0)} min of required stops on back gas.`:""}</p>`;
+  <p class="muted" style="margin:6px 0 0">All pressures in psi, rounded to 100 (use & rock bottom up, usable down, turn up).${r.members.length>1&&P.rule!=="all"?` Turn pressures are gas-matched to ${esc(diverName(r.limiter.m.diver))}'s usable gas.`:""}${r.bgStops.length?` Rock bottom includes ${r.bgStops.reduce((a,s)=>a+s.t,0)} min of required stops on back gas.`:""}</p>
+  ${r.stOn&&(r.trv||r.stagesInfo.length)?`<div class="muted" style="font-size:12px;margin-top:6px">${r.trv&&r.trv.sw?`Travel ${r.trv.name}: surface to ${r.trv.sw} ft${r.trv.sw===r.trv.autoSw?" (deepest step within pO₂, density and END limits)":""}${r.travelAsc.length?`, and again on ascent from ${r.travelAsc[0].sw} ft`:""}. `:""}${r.stagesInfo.length?`Stages: ${r.stagesInfo.map((s,i)=>`S${i+1} ${esc(s.tk.name)} ${f0(s.fill)}${s.drop!=null?` → drop ${f0(s.drop)} → back to ${f0(s.ret)}`:` → ${f0(s.ret)}`} (${f1(s.usable_cf)} cf)`).join("; ")}. Time at depth counts outbound stage gas plus back gas to turn; rock bottom stays on back gas.`:""}</div>`:""}`;
   let g="";
   r.members.forEach(x=>{
     if(x.rb>=x.fill) g+=`<div class="alert bad">${esc(diverName(x.m.diver))}: rock bottom ${f0(x.rb)} psi meets or exceeds start pressure — this tank can't support the dive.</div>`;
     if(x.fill > x.tk.rated*1.1) g+=`<div class="alert">${esc(diverName(x.m.diver))}: start pressure is more than 10% over the tank's rated ${f0(x.tk.rated)} psi.</div>`;
+    if(x.travelNeed && !x.travelNeed.ok) g+=`<div class="alert bad">${esc(diverName(x.m.diver))}: travel gas needs ${f0(x.travelNeed.psi)} psi but the cylinder starts at ${f0(r.trv.fill)}.</div>`;
     if(x.planBg!=null && x.planBg+x.rb>x.fill) g+=`<div class="alert bad">${esc(diverName(x.m.diver))}: planned back-gas use ${f0(x.planBg)} + rock bottom ${f0(x.rb)} exceeds ${f0(x.fill)} psi.</div>`;
   });
   $("#pGasAlerts").innerHTML=g;
+  renderRun(r);
   renderDecoOut(r);
   renderRatio(r);
   renderMath(r);
   $("#pBrief").textContent = briefText(r);
 }
 
+function renderRun(r){
+  const P=PL(), el=$("#pRun"); if(!el) return;
+  const ms=r.members; if(!ms.length||!ms[0].run){ el.innerHTML=""; return; }
+  const n=ms[0].run.length;
+  const cell=(x,s)=>{ if(s.end==null) return `<td></td>`; const v=Math.max(0,Math.round(s.end/100)*100);
+    const bad=s.flag&&s.flag.sev==="bad", warn=s.flag&&s.flag.sev==="warn";
+    return `<td style="color:${bad?"var(--bad)":warn?"var(--warn)":"inherit"};white-space:nowrap;text-align:right">${f0(v)}${s.sets&&ms.length>1?`<div style="font-size:11px;color:var(--accent)">sets time</div>`:""}</td>`; };
+  let rows="";
+  for(let i=0;i<n;i++){
+    const s0=ms[0].run[i]; if(!s0) continue;
+    const flags=ms.map(x=>{ const f=x.run[i]&&x.run[i].flag; return f&&f.sev!=="info"?{sev:f.sev,msg:`${ms.length>1?diverName(x.m.diver)+": ":""}${f.msg}`}:null; }).filter(Boolean);
+    const info=(s0.flag&&s0.flag.sev==="info"?`<span class="muted"> — ${s0.flag.msg}</span>`:"")+(s0.limit?`<div class="muted" style="font-size:12px">${esc(s0.limit.txt)}</div>`:"");
+    let edit="";
+    if(s0.edit&&s0.edit.st) edit=`<div class="row" style="gap:6px;margin-top:4px"><span class="muted" style="font-size:12px">${s0.edit.lbl}</span><input type="number" step="100" data-st="${s0.edit.st}" value="${s0.edit.val}" style="width:90px;padding:4px 6px"></div>`;
+    if(s0.edit&&s0.edit.turn) edit=`<div class="row" style="gap:6px;margin-top:4px">${ms.map(x=>`<span class="muted" style="font-size:12px">${ms.length>1?esc(diverName(x.m.diver))+" ":""}${P.rule==="all"?"rock bottom":"turn pressure"}</span><input type="number" step="100" data-m="${x.i}.turnOv" value="${num(x.m.turnOv)>0?x.m.turnOv:""}" placeholder="${x.autoTurn}" style="width:84px;padding:4px 6px">`).join("")}</div>`;
+    rows+=`<tr><td style="vertical-align:top;color:var(--muted)">${i+1}</td><td>${esc(s0.txt.replace(/^(\w)/,c=>c))}${info}${edit}${flags.map(f=>`<div style="font-size:12px;color:${f.sev==="bad"?"var(--bad)":"var(--warn)"}">${esc(f.msg)}</div>`).join("")}</td>${ms.map(x=>x.run[i]?cell(x,x.run[i]):"<td></td>").join("")}</tr>`;
+  }
+  el.innerHTML=`<div style="overflow-x:auto"><table class="ds run"><tr><th></th><th>Step</th>${ms.map(x=>`<th style="text-align:right">${esc(diverName(x.m.diver))}<div class="muted" style="font-weight:400">psi at end</div></th>`).join("")}</tr>${rows}</table></div>
+    ${ms.some(x=>x.short>0)?`<div class="alert bad">The run comes up short — shorten the bottom time, add a stage, or use a bigger cylinder.</div>`:""}
+    <p class="muted" style="font-size:12px;margin:6px 0 0">${ms.length>1&&r.runLimiterIdx!=null?`${esc(diverName(ms[r.runLimiterIdx].m.diver))}'s supply sets most switch times. `:""}Times are run time from leaving the surface. Bottom gas is drawn in this order until the profile's need is met; leftover steps show as not needed. ${P.adv.ds?"Stops come from the decompression schedule.":"Turn on Deco schedule for stop-by-stop gas use."} Leave a limit blank to use the rule.</p>`;
+}
 function renderDecoOut(r){
   const P=PL(); let h="";
   if(P.adv.dg){
-    h += r.dgs.length ? `<div style="overflow-x:auto"><table class="ds"><tr><th>Gas</th><th>MOD @1.6</th><th>Switch</th><th>Cylinder</th></tr>${r.dgs.map(g=>`<tr class="sw"><td><b>${g.name}</b></td><td>${Math.floor(g.mod16)} ft</td><td>${g.sw>0?g.sw+" ft":"—"}</td><td>${esc(g.tk.name)} · ${g.fill}</td></tr>`).join("")}</table></div>` : "";
+    h += r.dgs.length ? `<div style="overflow-x:auto"><table class="ds"><tr><th>Gas</th><th>MOD @1.6</th><th>Switch</th><th>Cylinder</th></tr>${r.dgs.map(g=>`<tr class="sw"><td><b>${g.name}</b></td><td>${Math.floor(g.mod16)} ft</td><td>${g.sw>0?g.sw+" ft":"—"}${g.sw>0&&g.sw<g.swPo2?`<div class="muted" style="font-size:11px">density/END limit (pO₂ allows ${g.swPo2})</div>`:""}</td><td>${esc(g.tk.name)} · ${g.fill}</td></tr>`).join("")}</table></div>` : "";
     r.dgs.forEach(g=>{ if(g.sw<=0) h+=`<div class="alert">${g.name} has no usable switch depth.</div>`; else if(g.sw>=r.D) h+=`<div class="alert">${g.name} switch depth (${g.sw} ft) is at or below max depth — it won't be used as a deco gas.</div>`; });
     const names=r.dgs.map(g=>Math.round(g.o2*100)); if(new Set(names).size<names.length) h+=`<div class="alert">Two deco gases share the same O₂ — check for duplicate cylinders.</div>`;
     if(!P.adv.ds) h+=`<p class="muted">Turn on <b>Deco schedule</b> to calculate how much of each gas the stops require.</p>`;
@@ -1625,7 +1879,7 @@ function renderDecoOut(r){
       h += `<div class="out" style="margin-top:6px">
         <div class="big"><div class="k">First stop</div><div class="v">${s.noDeco?"—":s.stops[0].d+" <small>ft</small>"}</div><div class="s">GF ${r.gf.lo}/${r.gf.hi}</div></div>
         <div class="big"><div class="k">Stop time · run time</div><div class="v">${s.decoT} <small>min · RT ${Math.ceil(s.rt)}</small></div><div class="s">Time to surface ${Math.ceil(s.tts)} min · deco:bottom ${(s.decoT/num(P.bt)).toFixed(2)}:1</div></div>
-        <div class="big"><div class="k">Oxygen exposure</div><div class="v" style="color:${s.cns>80?"var(--bad)":s.cns>50?"var(--warn)":"inherit"}">${Math.round(s.cns)}% <small>CNS</small></div><div class="s">${Math.round(s.otu)} OTU (single-exposure limits)</div></div></div>`;
+        <div class="big"><div class="k">Oxygen exposure</div><div class="v" style="color:${s.cns>80?"var(--warn)":"inherit"}">${Math.round(s.cns)}% <small>CNS</small></div><div class="s">${Math.round(s.otu)} OTU (single-exposure limits)</div></div></div>`;
       if(!s.noDeco){
         let rt = 0, rows=""; const firstDepth=s.stops[0]?.d;
         // running time at end of each stop
@@ -1639,7 +1893,7 @@ function renderDecoOut(r){
           ${r.usableDgs.map((g,gi)=>`<tr><td>${g.name}<div class="muted">${esc(g.tk.name)} · ${g.fill}</div></td>${r.members.map(x=>{ const n=x.dgNeed[gi]; return `<td style="color:${n.ok?"inherit":"var(--bad)"}">${f0(n.psi)}</td>`; }).join("")}</tr>`).join("")}</table></div>`;
         r.members.forEach(x=>x.dgNeed.forEach(n=>{ if(!n.ok) h+=`<div class="alert bad">${esc(diverName(x.m.diver))}: ${n.g.name} needs ${f0(n.psi)} psi but the cylinder starts at ${f0(n.g.fill)}.</div>`; }));
       }
-      if(s.cns>80) h+=`<div class="alert bad">CNS ${Math.round(s.cns)}% exceeds 80% — reduce pO₂ or exposure.</div>`;
+      if(s.cns>80) h+=`<div class="alert">CNS ${Math.round(s.cns)}% exceeds 80% — reduce pO₂ or exposure.</div>`;
       if(s.otu>300) h+=`<div class="alert">${Math.round(s.otu)} OTU for one dive — check the daily limit.</div>`;
       h += `<p class="muted" style="margin:8px 0 0">Planning aid. Cross-check every schedule against an independent decompression planner and your computer before diving it.</p>`;
     }
@@ -1656,7 +1910,7 @@ function renderRatio(r){
       if(c.err) return `<tr><td>${c.lab}<div class="muted">${c.d} ft / ${c.t} min</div></td><td colspan="4" style="color:var(--bad)">${c.err}</td></tr>`;
       const short = c.bgUse.filter(b=>b.psi>b.x.fill);
       return `<tr><td><b>${c.lab}</b><div class="muted">${c.d} ft / ${c.t} min</div></td>
-        <td>${stopStr(c.s)}${c.mod?`<div style="color:var(--bad)">Beyond MOD</div>`:""}${c.dens>6.2?`<div style="color:var(--bad)">${c.dens.toFixed(1)} g/L</div>`:c.dens>5.2?`<div style="color:var(--warn)">${c.dens.toFixed(1)} g/L</div>`:""}</td>
+        <td>${stopStr(c.s)}${c.mod?`<div style="color:var(--warn)">Beyond MOD</div>`:""}${c.dens>6.2?`<div style="color:var(--warn)">${c.dens.toFixed(1)} g/L</div>`:c.dens>5.2?`<div style="color:var(--warn)">${c.dens.toFixed(1)} g/L</div>`:""}</td>
         <td>${c.s.decoT} min<div class="muted">RT ${Math.ceil(c.s.rt)}</div></td>
         <td>${c.s.noDeco?"—":c.ratio.toFixed(2)+":1"}</td>
         <td style="color:${short.length?"var(--bad)":"inherit"}">${c.bgUse.map(b=>`${esc(diverName(b.x.m.diver))}: ${f0(b.psi)}`).join("<br>")}</td></tr>`;
@@ -1680,6 +1934,8 @@ Model: Bühlmann ZHL-16C, GF ${r.gf.lo}/${r.gf.hi}, descent ${r.desc} ft/min, as
   Usable: ${x.fill} − ${x.rb} = ${f0(x.usable)} psi = ${f1(x.usable_cf)} cf`;
     if(P.rule!=="all") m += `\n  Allowance: ${f1(r.limUse)} cf × ${P.rule==="half"?"1/2":"1/3"} = ${f1(r.allow_cf)} cf = ${f0(x.allow_psi_raw)} psi → turn ${x.fill} − ${f0(x.allow_psi_raw)} → ${f0(x.turn)} psi`;
     m += `\n  Time: ${f1(x.allowCfActual)} cf ÷ (${x.sac} × ${f3(r.ata)}) = ${f1(x.gasMin)} min`;
+    if(r.stOn && (r.stagesInfo.length||r.trv)) m += `\n  Bottom phase on bottom gas: ${x.sac} × ${f1(x.bpNeed/x.sac||0)} ATA·min = ${f1(x.bpNeed)} cf → stages ${f1(x.fromStages)} cf, back gas ${f1(x.bpBack)} cf`;
+    if(x.travelNeed) m += `\n  Travel: ${x.sac} × ${f1(x.travelNeed.cf/x.sac/(num(P.dgRes)||1.5))} ATA·min × ${P.dgRes} = ${f1(x.travelNeed.cf)} cf → ${f0(x.travelNeed.psi)} psi`;
     if(x.planBg!=null) m += `\n  Planned back gas: ${x.sac} × ${f1(r.sched.use.bottom)} ATA·min = ${f1(x.sac*r.sched.use.bottom)} cf → ${f0(x.planBg)} psi`;
     x.dgNeed.forEach(n=>{ m += `\n  ${n.g.name}: ${x.sac} × ${f1(r.sched.use[n.g.key]||0)} ATA·min × ${P.dgRes} = ${f1(n.cf)} cf → ${f0(n.psi)} psi`; });
     m += `\n`;
@@ -1704,10 +1960,26 @@ function briefText(r){
   if(lvl>=2){ L.push(`Gas density: ${r.rho.toFixed(2)} g/L (limit ${r.densLim}, max ${Math.floor(r.densMax)} ft)`);
     L.push(`Model: Bühlmann ZHL-16C GF ${r.gf.lo}/${r.gf.hi}${r.gf.factors.length?` (factors: ${r.gf.factors.join(", ")})`:""}`); }
   if(!P.adv.ds) L.push(`NDL: ${r.ndl===Infinity?"no limit":r.ndl+" min"} · Ascent ${P.arate} ft/min · Stop: ${P.stop}`);
+
   if(P.adv.dg && r.dgs.length) L.push(`Deco gases: ${r.dgs.map(g=>`${g.name} @ ${g.sw} ft (${g.tk.name}, ${g.fill} psi)`).join("; ")}`);
   if(P.adv.ds && r.sched && !r.sched.error) L.push(`Deco: ${stopStr(r.sched)} · ${r.sched.decoT} min stops · RT ${Math.ceil(r.sched.rt)} · CNS ${Math.round(r.sched.cns)}% · ${Math.round(r.sched.otu)} OTU`);
   L.push(`Gas rule: ${P.rule==="all"?"all usable — ascend at rock bottom":P.rule==="half"?"halves":"thirds"}`);
   r.members.forEach(x=>L.push(`  ${diverName(x.m.diver)}: ${x.tk.name} @ ${x.fill} psi · ${P.rule==="all"?"ascend":"turn"} ${x.turn} · RB ${x.rb} · 5-min ${x.five} psi · ${x.m.expo}${x.m.weight?`, ${x.m.weight} lb`:""}`));
+  // DIVE RUN — shared steps, per-diver pressures where they differ
+  const ms=r.members;
+  if(ms.length && ms[0].run){
+    L.push(``,`DIVE RUN`);
+    ms[0].run.forEach((s0,i)=>{
+      if(s0.flag&&s0.flag.sev==="info") return;
+      const ends=ms.map(x=>x.run[i]&&x.run[i].end!=null?Math.max(0,Math.round(x.run[i].end/100)*100):null);
+      const endTxt = ends.every(v=>v==null) ? "" : (new Set(ends).size===1 ? ` → expect ${f0(ends[0])} psi` : ` → expect ${ms.map((x,j)=>`${diverName(x.m.diver)} ${f0(ends[j])}`).join(", ")} psi`);
+      let txt=s0.txt;
+      L.push(`${i+1}.) ${txt}${s0.key==="s"?"":endTxt}`);
+      if(s0.limit) L.push(`    (${s0.limit.txt})`);
+      ms.forEach(x=>{ const f=x.run[i]&&x.run[i].flag; if(f&&f.sev!=="info") L.push(`    ⚠ ${ms.length>1?diverName(x.m.diver)+": ":""}${f.msg}`); });
+    });
+    L.push(``);
+  }
   L.push(`Dive ends at: ${Math.floor(r.lim[1])===Infinity?"—":Math.floor(r.lim[1])+" min"} (${r.lim[0].toLowerCase()} limit), turn pressure, or any diver's call`);
   L.push(``,`CONTINGENCIES`);
   const showLight = P.light!=="Day" || +P.stage===4 || +P.stage>=8;
@@ -1813,13 +2085,16 @@ $("#v-plan").addEventListener("input", e=>{
   if(t.dataset.adv){ P.adv[t.dataset.adv]=t.checked;
     if(t.dataset.adv==="dg" && t.checked && !(P.dg||[]).length) P.dg=[{o2:50,he:0,tank:"al40",fill:3000},{o2:100,he:0,tank:"al40",fill:3000}];
     save(); renderPlan(); return; }
+  if(t.dataset.st){ const path=t.dataset.st.split("."); let o=P; for(let i=0;i<path.length-1;i++) o=o[path[i]];
+    const k=path[path.length-1]; o[k] = t.type==="checkbox" ? t.checked : (["tank","stRule"].includes(k) ? t.value : (t.value===""?"":+t.value));
+    save(); if(t.type==="checkbox"||k==="stRule") renderPlan(); else renderPlanOut(); return; }
   if(t.dataset.gff){ (P.gff ??= {})[t.dataset.gff]=t.checked; save(); renderPlanOut(); return; }
   if(t.dataset.dg){ const [i,f]=t.dataset.dg.split("."); P.dg[+i][f] = f==="tank"?t.value:(t.value===""?"":+t.value); save(); renderPlanOut(); return; }
   if(t.dataset.k!==undefined){ const k=t.dataset.k; P[k] = (t.type==="number"||["water","po2","dens","arate","stress","ptime","ss","cCount","lastStop","desc","dgRes"].includes(k)) ? (t.value===""?"":+t.value) : t.value;
     if(k==="o2") document.querySelectorAll('#v-plan [data-k="o2"]').forEach(el=>{ if(el!==t) el.value=P.o2; });
     save(); if(["light","stage","gfMode","mixStd","venue"].includes(k)) { renderPlan(); } else renderPlanOut(); return; }
   if(t.dataset.m){ const [i,f]=t.dataset.m.split("."); const m=P.team[+i];
-    m[f] = ["fill","sac","weight"].includes(f) ? (t.value===""?"":+t.value) : t.value;
+    m[f] = ["fill","sac","weight","turnOv"].includes(f) ? (t.value===""?"":+t.value) : t.value;
     if(f==="tank"){ const tk=TANKS.find(x=>x.id===t.value); if(tk && tk.id!=="custom") { m.fill=tk.rated; t.closest(".grid").querySelector(`[data-m="${i}.fill"]`).value=tk.rated; } }
     save(); renderPlanOut(); return; }
   if(t.dataset.c){ P.cont[t.dataset.c]=t.value; save(); $("#pBrief").textContent=briefText(planCalc()); return; }
@@ -1830,6 +2105,8 @@ $("#v-plan").addEventListener("click", e=>{
   const P=PL(), b=e.target.closest("button"); if(!b) return;
   if(b.id==="pObjAuto"){ const c=objectiveCandidates(P); const keys=autoPickObjectives({...P,obj:[]});
     P.obj=keys.map(k=>{ const x=c.find(y=>y.key===k); return {stage:+P.stage,key:x.key,kind:x.kind,i:x.i,text:x.text}; }); save(); renderObjectives(); renderPlanOut(); return; }
+  if(b.dataset.addst){ (P.stages??=[]).push({tank:"al80",fill:3000}); save(); renderPlan(); return; }
+  if(b.dataset.rmst){ P.stages.splice(+b.dataset.rmst,1); save(); renderPlan(); return; }
   if(b.dataset.objrm){ P.obj=P.obj.filter(o=>o.key!==b.dataset.objrm); save(); renderObjectives(); renderPlanOut(); return; }
   if(b.dataset.mix){ const [o,he]=b.dataset.mix.split("/").map(Number); P.o2=o; P.he=he; save(); renderPlan(); return; }
   if(b.dataset.adddg){ const [o,he]=b.dataset.adddg.split("/").map(Number); (P.dg ??= []).push({o2:o,he,tank:"al40",fill:3000}); save(); renderPlan(); return; }
@@ -1896,7 +2173,7 @@ function applyDetail(sectionId, d){
 }
 function planDetail(){
   const P=PL(); const inst = +P.stage || Math.min(...P.team.map(m=>currentInstar(m.diver)));
-  const d=detailFor(inst, P.adv && (P.adv.tmx||P.adv.dg||P.adv.ds));
+  const d=detailFor(inst, P.adv && (P.adv.tmx||P.adv.dg||P.adv.ds||P.adv.st));
   applyDetail("#v-plan", d); return d;
 }
 function logDetail(){
