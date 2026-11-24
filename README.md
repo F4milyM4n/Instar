@@ -37,7 +37,34 @@ GitHub Pages serves over HTTPS, which installing and offline use both require.
 - **Android (Chrome):** tap **Install app** in the header and confirm.
 - **Desktop (Chrome / Edge):** tap **Install app**, or use the install icon in the address bar.
 
-## What's new in version 5
+## Versions
+
+Instar uses **MAJOR.MINOR.PATCH** numbers, shown in the app's footer:
+- **Major** (7.0) — a new capability, or a change to how plans are calculated or how progress is counted.
+- **Minor** (6.1) — refinements and added content that don't change existing plans.
+- **Patch** (6.1.1) — fixes only. Omitted when it's 0.
+
+The number lives in one place in `index.html` (`APP_VERSION`); `sw.js` uses the same number for its cache name so installed apps update.
+
+## What's new in 6.0
+
+**Knowledge topics in every instar**
+- The physics and physiology each instar's skills depend on — from pressure, Boyle and Archimedes at Instar 1 to helium, blending and bubble models at Instar 10 — are listed in the report card under the principle they support, marked **KNOW**, next to the skills they explain. Topics are introduced where a skill first depends on them and revisited in more depth later.
+- Each topic is graded Developing / Performing / Excelling. Performing means explaining it, naming the skill or rule it drives, and working the numbers.
+- Each instar has one problem done by hand, with a worked answer to check against, placed under its principle.
+- Knowledge counts toward completing an instar (shown with skills as "Skills & knowledge"): every topic and the by-hand problem need Performing.
+
+**Dive Plan refinements**
+- Travel gas moved to the profile section, next to the bottom gas. When the bottom gas is hypoxic, the requirement shows right there, and it is no longer tied to the stages switch.
+- Gas extension now covers bottom stages only.
+- Instar readiness warnings (limits, prerequisites, credentials) moved to the Team section, so the profile shows only gas and depth problems.
+- Advanced planning appears only from the instar that teaches it: doubles from 6, planned decompression, deco gases and travel gas from 7, overhead planning from 8, bottom stages from 9, mixed gas from 10. Below that, the section stays hidden and a failing plan is told to shorten the dive, go shallower or use a larger cylinder. A switch already turned on in a saved plan stays visible so it can be turned off.
+- Direct-ascent instars (1–5) have no turn pressure: the plan ascends at rock bottom and shows **Time to rock bottom**. The gas rule (halves or thirds) appears from Instar 6, where the time shown is **Time to turn** and names the teammate whose usable gas the turn is matched to.
+- Planned decompression turns on by itself (marked "required") once a dive from Instar 7 up passes the no-deco limit; it can't be switched off while the plan needs it.
+- Overhead plans always use a turn rule (thirds by default); "ascend at rock bottom" is unavailable in an overhead. The time inside is solved together with the decompression it creates, since deco breathed on bottom gas raises rock bottom. A red alert shows when the gas leaves almost no time inside.
+- The Basic brief (Instars 1–2) is shorter: one profile line with the no-deco limit, each diver's ascend-at pressure, and a single line for the deeper/longer contingency when it still needs no stops.
+
+## What's new in 5.0
 
 **Instar groups**
 - Instars are grouped by what stands between the diver and the surface: **Foundations** (1–2), **Conditions** (3–5), **Virtual ceiling** (6–7) and **Overhead** (8–10).
@@ -56,7 +83,7 @@ GitHub Pages serves over HTTPS, which installing and offline use both require.
 - Rock bottom starts at the exit (entrance depth) and runs to the first gas switch.
 - The model's ascent on bottom gas is set aside before the gas rule, so the normal ascent never comes out of the spare.
 
-## What's new in version 4
+## What's new in 4.0
 
 **Travel gas and stages**
 - Travel gas for the descent, with an automatic switch depth (the deepest 10 ft step within pO₂, density and END limits), reused on the ascent.
@@ -76,12 +103,12 @@ GitHub Pages serves over HTTPS, which installing and offline use both require.
 **Training**
 - Stage skills with measurable standards: two-cylinder handling and time-based switches (Instar 7), open-water stage practice (Instar 8), a single bottom stage and missing-stage response (Instar 9), multiple stages and travel gas for hypoxic mixes (Instar 10).
 
-## What's new in version 3
+## What's new in 3.0
 
 - **Instar groups.** Instars are grouped where the consequence of a failure changes (renamed and regrouped in version 5).
 - **Detail levels follow the group,** so full planning tools arrive with doubles at Instar 6.
 
-## What's new in version 2
+## What's new in 2.0
 
 - **Detail that grows with the diver.** The Dive Plan and the after action review show only the essentials at first (Basic), add gas rules, pO₂, gas density, ascent rate, gradient factors and root-cause review next (Standard), and unlock trimix and decompression planning last (Full) — by group since version 3. A **Detail** menu (Auto / Basic / Standard / Full) overrides it. Hidden settings are still used and summarized in plain language; safety warnings always show.
 - **Max depth from both limits.** The gas label shows the shallower of the pO₂ MOD and the gas-density limit, and names which one sets it.
@@ -92,8 +119,9 @@ GitHub Pages serves over HTTPS, which installing and offline use both require.
 ## Publishing an update
 
 1. Replace the changed files in the repository.
-2. In `sw.js`, change `VERSION` (for example `instar-v1` → `instar-v2`).
-3. Installed copies show **"A new version of Instar is ready — Reload"** the next time they open online.
+2. Set the new number in `APP_VERSION` (`index.html`) and `VERSION` (`sw.js`) — for example `6.1` and `instar-6.1`.
+3. Add a "What's new" section above.
+4. Installed copies show **"A new version of Instar is ready — Reload"** the next time they open online.
 
 ## Your data
 
