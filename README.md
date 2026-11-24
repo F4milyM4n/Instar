@@ -37,6 +37,25 @@ GitHub Pages serves over HTTPS, which installing and offline use both require.
 - **Android (Chrome):** tap **Install app** in the header and confirm.
 - **Desktop (Chrome / Edge):** tap **Install app**, or use the install icon in the address bar.
 
+## What's new in version 5
+
+**Instar groups**
+- Instars are grouped by what stands between the diver and the surface: **Foundations** (1–2), **Conditions** (3–5), **Virtual ceiling** (6–7) and **Overhead** (8–10).
+- Each group shows as a bar in its water color with one dot per instar (filled = complete). The instar list is split under group headings.
+- Detail levels follow the group: Foundations = Basic, Conditions = Standard, Virtual ceiling and Overhead = Full.
+
+**Dive Plan reads top to bottom**
+- Sections are in the order a plan fails and gets fixed: profile and bottom gas → no-deco limit and decompression → back gas → gas extension → overhead route → dive run → contingencies → checks → brief.
+- The advanced switches moved into the section they fix (mixed gas under the profile, planned decompression under the no-deco limit, travel gas and stages under gas extension). They appear when the section above fails, and always at Full detail.
+- Sections are numbered as they appear.
+
+**Overhead planning** (venue: Overhead site)
+- Time to turn comes from the gas: stages out, then back gas to turn, with an optional cap. The exit mirrors it, scaled by one flow factor per dive (exit time ÷ entry time).
+- Gas is drawn by phase: going in, coming out (back-gas return share to the nearest stage, then each stage's return third), then the ascent.
+- Sharing check for every exit leg: the gas in hand (back gas, then the teammate's own stage) must get two divers to the next gas at their normal rates. Short legs show red.
+- Rock bottom starts at the exit (entrance depth) and runs to the first gas switch.
+- The model's ascent on bottom gas is set aside before the gas rule, so the normal ascent never comes out of the spare.
+
 ## What's new in version 4
 
 **Travel gas and stages**
@@ -59,12 +78,12 @@ GitHub Pages serves over HTTPS, which installing and offline use both require.
 
 ## What's new in version 3
 
-- **Belts.** Instars are grouped into White (1–2), Blue (3–5), Purple (6–7), Brown (8–9) and Black (10), split where the consequence of a failure changes. Each completed instar is a stripe. The diver's belt and stripes show beside their name; instar tiles carry a small belt-colored mark.
-- **Detail levels follow the belt.** White = Basic, Blue = Standard, Purple and above = Full, so full planning tools arrive with doubles at Instar 6.
+- **Instar groups.** Instars are grouped where the consequence of a failure changes (renamed and regrouped in version 5).
+- **Detail levels follow the group,** so full planning tools arrive with doubles at Instar 6.
 
 ## What's new in version 2
 
-- **Detail that grows with the diver.** The Dive Plan and the after action review show only the essentials at first (Basic), add gas rules, pO₂, gas density, ascent rate, gradient factors and root-cause review next (Standard), and unlock trimix and decompression planning last (Full) — by belt since version 3. A **Detail** menu (Auto / Basic / Standard / Full) overrides it. Hidden settings are still used and summarized in plain language; safety warnings always show.
+- **Detail that grows with the diver.** The Dive Plan and the after action review show only the essentials at first (Basic), add gas rules, pO₂, gas density, ascent rate, gradient factors and root-cause review next (Standard), and unlock trimix and decompression planning last (Full) — by group since version 3. A **Detail** menu (Auto / Basic / Standard / Full) overrides it. Hidden settings are still used and summarized in plain language; safety warnings always show.
 - **Max depth from both limits.** The gas label shows the shallower of the pO₂ MOD and the gas-density limit, and names which one sets it.
 - **Focused contingencies.** One deeper (+10 ft) and one longer (+5 min) recovery schedule — the next table increments, and the most likely planning errors.
 - **Instar always set.** Plan and log instar menus list 1–10 only and default to the diver's or team's current instar.
