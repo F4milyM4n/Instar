@@ -46,6 +46,16 @@ Instar uses **MAJOR.MINOR.PATCH** numbers, shown in the app's footer:
 
 The number lives in one place in `index.html` (`APP_VERSION`); `sw.js` uses the same number for its cache name so installed apps update.
 
+## What's new in 7.0
+
+**Repetitive dives**
+- A **Repetitive dive** checkbox in the profile opens an **Earlier dives today** card. Enter each earlier dive (max depth, bottom time, O₂, and helium from Instar 10) and the surface interval that followed it. Nothing depends on the log; **Fill from log** can copy a logged dive in.
+- Each earlier dive is rebuilt from its profile, ascended with any stops the model requires, and off-gassed on air through its surface interval. The plan starts from what is left, so its no-deco limit, stops and gas change with it.
+- Profiles: **Square** (all at max depth) and **From average depth** (two levels that match your computer's average) at every instar; **Deep-weighted** and **Shallow-weighted** multilevel estimates and **Enter levels** from Instar 3.
+- The card shows the no-deco limit now vs a first dive (and vs square when a multilevel shape is used), the extra surface time that returns it to within 5% of a first dive, CNS and OTU carried into this dive, and a common before-flying guideline (18 h after repetitive dives, 24 h after decompression). The brief adds a repetitive line.
+- The checkbox replaces "Repetitive dive today" in the gradient-factor risk list; it now both models the leftover gas and lowers GF high.
+- Below Instar 7, a plain-language **Things that shorten today's no-deco limit** list (workload, flying after, feeling unwell, plus cold, current and repetitive from the plan) shows the no-deco limit with and without them. Gradient-factor numbers stay hidden until Instar 7.
+
 ## What's new in 6.0
 
 **Knowledge topics in every instar**

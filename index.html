@@ -225,11 +225,20 @@ table.run td{vertical-align:top}
     <div class="out" style="margin-top:12px" id="pProfile"></div>
     <div id="pTravelBox"></div>
     <div id="pLimitAlerts"></div>
+    <div class="row fixrow" style="margin-top:10px"><label class="chip"><input type="checkbox" data-rep="on"> Repetitive dive</label><span class="muted" style="font-size:12px">Earlier dives today shorten this dive's limits</span></div>
+  </div>
+
+  <div class="card" id="pRepCard">
+    <h2 data-sec="Earlier dives today">Earlier dives today</h2>
+    <p class="muted" style="margin:0 0 8px;font-size:13px">Oldest first. Each dive is rebuilt from its profile, ascended with any stops it needed, then off-gassed on air through the surface interval that followed it.</p>
+    <div id="pRepBox"></div>
+    <div id="pRepOut" style="margin-top:10px"></div>
   </div>
 
   <div class="card" id="pDecoCard">
     <h2 data-sec="No-deco limit &amp; decompression">2 · No-deco limit &amp; decompression</h2>
     <div id="pNdlLine" class="muted" style="font-size:13px"></div>
+    <div id="pNdlFactors"></div>
     <div class="row fixrow" id="pFixDeco" style="margin-top:8px"><label class="chip"><input type="checkbox" data-adv="ds"> Planned decompression</label><label class="chip"><input type="checkbox" data-adv="dg"> Deco gases</label><span class="muted" style="font-size:12px">When the dive passes the no-deco limit</span></div>
     <div class="gate" style="margin-top:12px" id="pModel" data-lvl="2"></div>
     <div id="pDgBox">
@@ -517,7 +526,7 @@ const ARATE_OPTS = [10, 20, 30];
 
 // Version: MAJOR.MINOR.PATCH — major = new capability or a change to how plans or progress work;
 // minor = refinements and added content; patch = fixes only (omitted when 0). Keep sw.js VERSION in step.
-const APP_VERSION = "6.0";
+const APP_VERSION = "7.0";
 { const v=document.getElementById("appVer"); if(v) v.textContent=APP_VERSION; }
 const PRINCIPLES = ["Plan the dive","Conserve energy","Use safety equipment","Manage decompression","Maintain situational awareness","Maintain team integrity"];
 
@@ -1358,15 +1367,19 @@ const switchDepth=(o2,W)=>Math.floor(((1.6/o2-1)*W+0.5)/10)*10;   // MOD at pO2 
 
 /* Simulate a square profile and its ascent. o = {depth, bt, bottom:{o2,he}, deco:[{o2,he,sw,key}], gfLo, gfHi, W, asc, desc, last} */
 function decoPlan(o){
-  const W=o.W, T=tissInit(), segs=[]; let rt=0;
+  const W=o.W, T=o.T0?tissClone(o.T0):tissInit(), segs=[]; let rt=0;
   const add=(d0,d1,t,g,ph="asc")=>{ if(t<=0) return; tissSeg(T,d0,d1,t,g,W); segs.push({d0,d1,t,g,ph}); rt+=t; };
   const descT=o.depth/o.desc;
   // Descent: on travel gas down to its switch depth (if carried), then bottom gas
   if(o.travel && o.travel.sw>0){ const sw=Math.min(o.travel.sw,o.depth); add(0,sw,sw/o.desc,o.travel,"desc"); add(sw,o.depth,(o.depth-sw)/o.desc,o.bottom,"desc"); }
   else add(0,o.depth,descT,o.bottom,"desc");
-  add(o.depth,o.depth,Math.max(0,o.bt-descT),o.bottom,"bottom");
+  let endD=o.depth;
+  if(o.levels && o.levels.length){            // multilevel: levels in order, moving between them at the ascent/descent rate
+    let cd=o.depth; o.levels.forEach(l=>{ const mv=Math.abs(l.d-cd)/(l.d<cd?o.asc:o.desc); add(cd,l.d,mv,o.bottom,"bottom"); add(l.d,l.d,Math.max(0,l.t),o.bottom,"bottom"); cd=l.d; });
+    endD=cd;
+  } else add(o.depth,o.depth,Math.max(0,o.bt-descT),o.bottom,"bottom");
   const gasAt=d=>{ let best=null; o.deco.forEach(g=>{ if(g.sw>=d-1e-9 && (!best||g.o2>best.o2)) best=g; }); return best; };
-  let cur=o.depth, g=o.bottom, first=null; const stops=[];
+  let cur=endD, g=o.bottom, first=null; const stops=[];
   const gfAt=d=> first==null ? o.gfLo : o.gfHi+(o.gfLo-o.gfHi)*d/first;
   // no-decompression test: direct ascent on bottom gas at GF high
   const nd=tissClone(T); tissSeg(nd,cur,0,cur/o.asc,g,W);
@@ -1396,17 +1409,45 @@ function decoPlan(o){
     segs.forEach(sg=>{ const ata=((sg.d0+sg.d1)/2)/W+1, k=sg.g.key||"bottom"; use[k]=(use[k]||0)+ata*sg.t; if(sg.ph!=="asc") useBP[k]=(useBP[k]||0)+ata*sg.t;
       const po2=sg.g.o2*ata; cns+=sg.t/cnsLimit(po2)*100; if(po2>0.5) otu+=sg.t*Math.pow((po2-0.5)/0.5,0.8333); });
     const decoT = stops.reduce((a,s)=>a+s.t,0);
-    return {noDeco, stops, first, rt, decoT, use, useBP, cns, otu, segs, tts: rt-o.bt};
+    return {noDeco, stops, first, rt, decoT, use, useBP, cns, otu, segs, tts: rt-o.bt, T};
   }
 }
 /* Model NDL: longest bottom time (incl. descent) allowing a direct ascent within GF high */
-function modelNDL(depth,g,gfHi,W,asc,desc){
+function modelNDL(depth,g,gfHi,W,asc,desc,T0){
   if(depth<=0) return Infinity;
-  const T=tissInit(), descT=depth/desc; tissSeg(T,0,depth,descT,g,W);
+  const T=T0?tissClone(T0):tissInit(), descT=depth/desc; tissSeg(T,0,depth,descT,g,W);
   const ok=()=>{ const c=tissClone(T); tissSeg(c,depth,0,depth/asc,g,W); return ceilFt(c,gfHi,W)<=0; };
   if(!ok()) return 0;
   for(let t=1;t<=360;t++){ tissSeg(T,depth,depth,1,g,W); if(!ok()) return Math.floor(descT+t-1); }
   return Infinity;
+}
+
+/* ---- Repetitive dives: carry tissue loading and oxygen exposure from earlier dives ----
+   Each earlier dive is rebuilt from its profile choice, ascended with any stops the model requires (on its own gas),
+   then off-gassed on air through its surface interval. */
+const REP_PROFILES={square:"Square — all of it at max depth", avg:"From average depth", deep:"Deep-weighted multilevel (estimate)", shallow:"Shallow-weighted multilevel (estimate)", levels:"Enter levels"};
+function repLevels(d,desc){
+  const D=num(d.depth)||0, bt=num(d.bt)||0, tb=Math.max(0,bt-D/desc), A=num(d.avg)||0;
+  const shape=(arr)=>arr.map(([f,p])=>({d:Math.round(D*f),t:tb*p}));
+  if(d.profile==="deep") return shape([[1,.5],[.7,.3],[.4,.2]]);
+  if(d.profile==="shallow") return shape([[1,.2],[.6,.3],[.35,.5]]);
+  if(d.profile==="avg" && A>0 && A<D){ let s=2*A-D, f=.5; if(s<10){ s=10; f=(A-10)/(D-10); } return [{d:D,t:tb*f},{d:Math.round(s),t:tb*(1-f)}]; }
+  if(d.profile==="levels" && (d.levels||[]).some(l=>num(l.d)>0&&num(l.t)>0)) return d.levels.filter(l=>num(l.d)>0&&num(l.t)>0).map(l=>({d:Math.min(D||999,num(l.d)),t:num(l.t)}));
+  return null;   // square
+}
+function repCalc(dives,gf,W,asc,desc,last,square){
+  let T=tissInit(), cns=0, otu=0; const out=[];
+  for(const d of dives){
+    const D=num(d.depth)||0, bt=num(d.bt)||0; if(!(D>0&&bt>0)) continue;
+    const g={o2:Math.min(1,Math.max(0.08,(num(d.o2)||21)/100)), he:Math.min(0.9,Math.max(0,(num(d.he)||0)/100))};
+    const s=decoPlan({depth:D,bt,bottom:g,deco:[],gfLo:gf.lo/100,gfHi:gf.hi/100,W,asc,desc,last,T0:T,levels:square?null:repLevels(d,desc)});
+    if(s.error) return {error:s.error};
+    T=s.T; cns+=s.cns; otu+=s.otu;
+    const si=Math.max(0,num(d.si)||0);
+    tissSeg(T,0,0,si,{o2:0.21,he:0},W); cns*=Math.pow(0.5,si/90);
+    out.push({D,bt,g,noDeco:s.noDeco,stops:s.stops,rt:s.rt,si});
+  }
+  return {T,cns,otu,dives:out};
 }
 
 /* ---------------- DIVE PLAN ---------------- */
@@ -1436,7 +1477,7 @@ const PLAN_DEFAULT = ()=>({
   team:[{diver:S.divers[0].id, tank:"al80", fill:3000, sac:0.5, expo:"5 mm wetsuit", weight:""}],
   cont:{...CONT_DEFAULT}, checks:{}, ...ADV_DEFAULT()
 });
-function ADV_DEFAULT(){ return {travel:{on:false,o2:32,he:0,tank:"al40",fill:3000,sw:"",asc:true}, stages:[], stRule:"thirds", adv:{tmx:false,dg:false,ds:false,st:false}, he:0, endLim:100, gfMode:"suggest", gfLo:50, gfHi:80, gff:{}, lastStop:20, desc:60, dg:[], dgRes:1.5, mixStd:"standard", venue:"open", obj:[], flow:"1", entD:""}; }
+function ADV_DEFAULT(){ return {travel:{on:false,o2:32,he:0,tank:"al40",fill:3000,sw:"",asc:true}, stages:[], stRule:"thirds", adv:{tmx:false,dg:false,ds:false,st:false}, he:0, endLim:100, gfMode:"suggest", gfLo:50, gfHi:80, gff:{}, lastStop:20, desc:60, dg:[], dgRes:1.5, mixStd:"standard", venue:"open", obj:[], flow:"1", entD:"", rep:{on:false,dives:[]}}; }
 function normalizePlan(p){ const d=ADV_DEFAULT(); for(const k in d) if(p[k]==null) p[k]=d[k]; p.adv={...d.adv,...p.adv}; if(p.dens==null) p.dens=5.2; if(!["standard","reduced"].includes(p.mixStd)) p.mixStd="standard"; if(!["suggest","shallow","conservative","custom"].includes(p.gfMode)) p.gfMode="suggest"; return p; }
 // migrate older single-tank gas settings into a plan
 function ensurePlan(){ if(S.plan) return;
@@ -1459,13 +1500,14 @@ function tankOf(id){
 function diverName(id){ return (S.divers.find(d=>d.id===id)||{name:"?"}).name; }
 
 /* ---- Gradient factor selection ---- */
-const GF_FACTORS_MANUAL = {repet:"Repetitive dive today", work:"Heavy workload planned", fly:"Flying or driving to altitude after", unwell:"Fatigued, dehydrated or unwell"};
+const GF_FACTORS_MANUAL = {work:"Heavy workload planned", fly:"Flying or driving to altitude after", unwell:"Fatigued, dehydrated or unwell"};
 function gfSelect(P){
   const D=num(P.depth)||0, he=P.adv?.tmx?(num(P.he)||0):0;
   const auto=[];
   const cold = (num(P.temp)&&num(P.temp)<60) || P.team.some(m=>/semi-dry|Drysuit/.test(m.expo||""));
   if(cold) auto.push("Cold water / thermal stress");
   if(["Moderate","Strong"].includes(P.current)) auto.push(`${P.current} current (exertion)`);
+  if(P.rep?.on && (P.rep.dives||[]).length) auto.push(`Repetitive dive (${P.rep.dives.length} earlier dive${P.rep.dives.length>1?"s":""} today)`);
   if(D>100 || he>0) auto.push(he>0?"Trimix / deep exposure":"Depth beyond 100 ft");
   if(P.adv?.ds && P.team.some(m=>!stageStatus(m.diver,7).complete)) auto.push("Team member hasn't completed Instar 7 (new to planned deco)");
   const manual = Object.keys(GF_FACTORS_MANUAL).filter(k=>P.gff?.[k]).map(k=>GF_FACTORS_MANUAL[k]);
@@ -1513,7 +1555,25 @@ function planCore(ov){
   const gf = gfSelect(P);
   const asc=num(P.arate)||10, desc=num(P.desc)||60;
   const bottom={o2:fo2,he:fhe,key:"bottom"};
-  const mNDL = modelNDL(D,bottom,gf.hi/100,W,asc,desc);
+  // Earlier dives today: tissues and oxygen exposure carried into this plan
+  const repOn = !!(P.rep?.on && (P.rep.dives||[]).length);
+  const lastStop=num(P.lastStop)||20;
+  const repR = repOn ? repCalc(P.rep.dives,gf,W,asc,desc,lastStop,false) : null;
+  const T0 = repR && !repR.error ? repR.T : null;
+  const mNDL = modelNDL(D,bottom,gf.hi/100,W,asc,desc,T0);
+  let repInfo=null;
+  if(repR && !(ov&&ov.quick)){
+    if(repR.error) repInfo={error:repR.error};
+    else {
+      const first = modelNDL(D,bottom,gf.hi/100,W,asc,desc);
+      const sq = P.rep.dives.some(d=>d.profile&&d.profile!=="square") ? repCalc(P.rep.dives,gf,W,asc,desc,lastStop,true) : null;
+      const sqNdl = sq && !sq.error ? modelNDL(D,bottom,gf.hi/100,W,asc,desc,sq.T) : null;
+      // extra surface time after the last dive that brings this dive's limit back to within 5% of a first dive
+      let clean=null;
+      if(first!==Infinity && mNDL<first*0.95){ const T=tissClone(T0); for(let m=15;m<=24*60;m+=15){ tissSeg(T,0,0,15,{o2:0.21,he:0},W); if(modelNDL(D,bottom,gf.hi/100,W,asc,desc,T)>=first*0.95){ clean=m; break; } } }
+      repInfo={first, now:mNDL, sqNdl, clean, cns:repR.cns, otu:repR.otu, dives:repR.dives, lastSi:repR.dives.length?repR.dives[repR.dives.length-1].si:0};
+    }
+  }
   // Gas switch depth on ascent: deepest 10-ft stop within pO2 1.6 AND the density and END limits
   const endLimS=num(P.endLim)||100;
   const safeSwitch=(o2,he)=>{ const n2=1-o2-he, r0=o2*1.429+n2*1.251+he*0.179; let best=0;
@@ -1546,8 +1606,9 @@ function planCore(ov){
       const out_cf=Math.max(0,fill-(drop??ret))/100*tk.tf, ret_cf=drop!=null?Math.max(0,drop-ret)/100*tk.tf:0;
       return {i,tk,fill,drop,ret,out_cf,ret_cf,usable_cf:out_cf+ret_cf}; }) : [];
   const stagesUsable = stagesInfo.reduce((a,s)=>a+s.usable_cf,0), stagesOut = stagesInfo.reduce((a,s)=>a+s.out_cf,0);
-  const modelOpts = (depth,bt)=>({depth,bt,bottom,deco:[...usableDgs,...travelAsc],travel:trv&&trv.sw>0?trv:null,gfLo:gf.lo/100,gfHi:gf.hi/100,W,asc,desc,last:num(P.lastStop)||20});
+  const modelOpts = (depth,bt)=>({depth,bt,bottom,deco:[...usableDgs,...travelAsc],travel:trv&&trv.sw>0?trv:null,gfLo:gf.lo/100,gfHi:gf.hi/100,W,asc,desc,last:num(P.lastStop)||20,T0});
   const sched = P.adv?.ds && D>0 && btUse>0 ? decoPlan(modelOpts(D,btUse)) : null;
+  if(sched && !sched.error && repR && !repR.error){ sched.cnsCarry=repR.cns; sched.otuCarry=repR.otu; sched.cns+=repR.cns; sched.otu+=repR.otu; }   // oxygen clocks include earlier dives
   // rock-bottom target: first gas switch if deco gas carried, else surface; plus any required stops breathed on bottom gas
   const rbTarget = (usableDgs.length||travelAsc.length) ? Math.max(...[...usableDgs,...travelAsc].map(g=>g.sw)) : 0;
   // Profile gas use (ATA·min) when no schedule is computed: descent (travel then bottom gas) + bottom time
@@ -1754,6 +1815,8 @@ function planCore(ov){
   const gasMin = members.length ? Math.min(...members.map(x=>x.gasMin)) : 0;
   const tblNdl = ndlRow ? ndlRow[1] : null;
   const ndlBase = tblNdl==null ? mNDL : Math.min(tblNdl, mNDL);
+  // the same limit without today's risk factors, to show what they cost
+  const ndlPlain = gf.factors.length && gf.mode==="suggest" && !(ov&&ov.quick) ? (()=>{ const m=modelNDL(D,bottom,0.80,W,asc,desc,T0); return tblNdl==null?m:Math.min(tblNdl,m); })() : null;
   const ndl = P.adv?.ds ? null : ndlBase;
   const limits = OH ? [["Gas in and out",btUse||Infinity]] : [[P.rule==="all"?"Gas to rock bottom":"Gas to turn",gasMin],["Planned",btUse||Infinity]]; if(ndl!=null) limits.push(["NDL",ndl]);
   const lim = limits.reduce((a,b)=>b[1]<a[1]?b:a);
@@ -1768,7 +1831,7 @@ function planCore(ov){
     return {lab,d,t,s,ratio: s.decoT/t, bgUse, worst, mod:d>(num(P.po2)/fo2-1)*W, dens:rho0*ata_d};
   }) : [];
   return {P,D,W,fo2,fhe,fn2,ata,po2,mod,densLim,rho0,rho,densMax,densHardMax,endFt,minOD,ead,ndlRow,tblNdl,mNDL,ndl,gf,asc,desc,
-    dgs,usableDgs,sched,rbTarget,bgStops,ascMin,ascAvgAta,members,frac,limUse,limiter,allow_cf,gasMin,lim,cont,trv,travelAsc,stagesInfo,stagesUsable,stOn,runLimiterIdx,OH,oh,btUse,entD,flow,ndlBase};
+    dgs,usableDgs,sched,rbTarget,bgStops,ascMin,ascAvgAta,members,frac,limUse,limiter,allow_cf,gasMin,lim,cont,trv,travelAsc,stagesInfo,stagesUsable,stOn,runLimiterIdx,OH,oh,btUse,entD,flow,ndlBase,ndlPlain,gf,repInfo,repOn,cnsCarry:repR&&!repR.error?repR.cns:0,otuCarry:repR&&!repR.error?repR.otu:0};
 }
 // Standard bottom-mix sets.
 // Reduced set: max O2 / min He at each MOD tier; working range = previous tier's MOD to this MOD.
@@ -1835,7 +1898,7 @@ function enforceUnlocks(P){
   if(ch) save();
 }
 function renderPlan(){
-  const P=PL(); enforceUnlocks(P);
+  const P=PL(); enforceUnlocks(P); renderRepBox();
   document.querySelectorAll("#v-plan [data-k]").forEach(el=>{ const v=P[el.dataset.k]; el.value = v==null?"":v; });
   if(!P.stage) P.stage = Math.min(...P.team.map(m=>currentInstar(m.diver)));
   $("#pStage").innerHTML = STAGES.map(s=>`<option value="${s.n}" ${String(P.stage)===String(s.n)?"selected":""}>${s.n}. ${s.t}</option>`).join("");
@@ -1958,6 +2021,44 @@ const stopStr = s => s.noDeco ? "No stops required" : s.stops.map(x=>`${x.d}′ 
 
 const PLAN_UNLOCK={dbl:6, rule:6, deco:7, trv:7, oh:8, st:9, tmx:10};   // rule: a turn pressure (halves/thirds); direct-ascent instars ascend at rock bottom
 const canPlan=(k,P)=>(+((P||PL()).stage)||1)>=PLAN_UNLOCK[k];
+function repDefaultDive(){ return {depth:60,bt:40,o2:21,he:0,profile:"square",avg:"",levels:[],si:60}; }
+function renderRepBox(){
+  const P=PL(), box=$("#pRepBox"); if(!box) return;
+  P.rep ??= {on:false,dives:[]};
+  const shapes=(+P.stage||1)>=3, he=canPlan("tmx",P);
+  const logs=(S.log||[]).filter(l=>num(l.maxD)>0&&num(l.time)>0).slice(-12).reverse();
+  box.innerHTML = P.rep.dives.map((d,i)=>{
+    const opts=Object.entries(REP_PROFILES).filter(([k])=>shapes||k==="square"||k==="avg"||k===d.profile).map(([k,v])=>`<option value="${k}" ${d.profile===k?"selected":""}>${v}</option>`).join("");
+    const lv = d.profile==="levels" ? `<div style="margin-top:6px">${(d.levels||[]).map((l,j)=>`<div class="row" style="gap:6px;margin-top:4px"><span class="muted" style="font-size:12px">Level ${j+1}</span><input type="number" step="5" placeholder="ft" data-rep="dives.${i}.levels.${j}.d" value="${l.d??""}" style="width:76px"><input type="number" step="1" placeholder="min" data-rep="dives.${i}.levels.${j}.t" value="${l.t??""}" style="width:76px"><button class="btn sm" data-replvdel="${i}.${j}">✕</button></div>`).join("")}<button class="btn sm" style="margin-top:6px" data-replvadd="${i}">+ Level</button><div class="muted" style="font-size:12px;margin-top:4px">Deepest first, in the order dived. Times are time at each level.</div></div>` : "";
+    return `<div class="gate" style="margin-top:8px">
+      <div class="row" style="justify-content:space-between"><b>Dive ${i+1}</b><button class="btn sm" data-repdel="${i}">Remove</button></div>
+      <div class="grid" style="margin-top:6px">
+        <div><label>Max depth (ft)</label><input type="number" step="5" data-rep="dives.${i}.depth" value="${d.depth??""}"></div>
+        <div><label>Bottom time (min)</label><input type="number" step="1" data-rep="dives.${i}.bt" value="${d.bt??""}"></div>
+        <div><label>O₂ %</label><input type="number" step="1" min="8" max="100" data-rep="dives.${i}.o2" value="${d.o2??21}"></div>
+        ${he?`<div><label>He %</label><input type="number" step="1" min="0" max="90" data-rep="dives.${i}.he" value="${d.he??0}"></div>`:""}
+        <div style="grid-column:1/-1"><label>Profile</label><select data-rep="dives.${i}.profile">${opts}</select></div>
+        ${d.profile==="avg"?`<div><label>Average depth (ft)</label><input type="number" step="1" data-rep="dives.${i}.avg" value="${d.avg??""}" placeholder="from your computer"></div>`:""}
+        <div><label>Surface interval after it (min)</label><input type="number" step="5" data-rep="dives.${i}.si" value="${d.si??""}"></div>
+      </div>${lv}
+      ${d.profile==="deep"||d.profile==="shallow"?`<div class="muted" style="font-size:12px;margin-top:4px">${d.profile==="deep"?"50% of the bottom time at max depth, 30% at 70% of max, 20% at 40% of max":"20% at max depth, 30% at 60% of max, 50% at 35% of max"}. An estimate — if unsure, use Square.</div>`:""}
+    </div>`; }).join("") + `<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm" data-repadd="1">+ Earlier dive</button>${logs.length?`<select data-replog="1" style="width:auto"><option value="">Fill from log…</option>${logs.map(l=>`<option value="${l.id}">${esc(l.date||"")} ${esc(l.site||"")} · ${l.maxD} ft · ${l.time} min</option>`).join("")}</select>`:""}</div>`;
+}
+function renderRepOut(r){
+  const el=$("#pRepOut"); if(!el) return; const P=PL();
+  if(!r.repOn || !r.repInfo){ el.innerHTML=""; return; }
+  const ri=r.repInfo; if(ri.error){ el.innerHTML=`<div class="alert bad">${esc(ri.error)}</div>`; return; }
+  const f=v=>v===Infinity?"no limit":Math.floor(v)+" min";
+  const anyDeco=ri.dives.some(d=>!d.noDeco)||(r.sched&&!r.sched.noDeco);
+  const fly = anyDeco?24:18;
+  el.innerHTML=`<div class="out">
+      <div class="big"><div class="k">No-deco limit at ${r.D} ft</div><div class="v" style="color:${ri.now<ri.first?"var(--warn)":"inherit"}">${f(ri.now)}</div><div class="s">first dive: ${f(ri.first)}${ri.sqNdl!=null?` · if square: ${f(ri.sqNdl)}`:""}</div></div>
+      <div class="big"><div class="k">Back to a first-dive limit</div><div class="v">${ri.clean==null?(ri.now>=ri.first*0.95?"now":"> 24 h"):`+${Math.floor(ri.clean/60)?Math.floor(ri.clean/60)+" h ":""}${ri.clean%60?ri.clean%60+" min":""}`}</div><div class="s">more surface time after the ${f(ri.lastSi).replace(" min","")}-min interval, to within 5%</div></div>
+      <div class="big"><div class="k">Carried oxygen</div><div class="v">${Math.round(ri.cns)}% <small>CNS</small></div><div class="s">${Math.round(ri.otu)} OTU today · CNS halves about every 90 min</div></div>
+      <div class="big"><div class="k">Before flying</div><div class="v">${fly} <small>h</small></div><div class="s">${anyDeco?"after decompression diving":"after repetitive dives"} — a common guideline</div></div></div>
+    ${ri.dives.map((d,i)=>`<div class="muted" style="font-size:12px;margin-top:4px">Dive ${i+1}: ${d.D} ft · ${d.bt} min · ${gasName(d.g)} · ${d.noDeco?"no stops":"stops "+d.stops.map(s=>s.d+"′ "+s.t).join(", ")} · then ${d.si} min on the surface</div>`).join("")}
+    <p class="muted" style="font-size:12px;margin:6px 0 0">The same gradient factors as this plan are used for the earlier dives. Multilevel shapes and the average-depth split are estimates and less conservative than square.</p>`;
+}
 function renderFixes(r,det){
   // Each section offers its fix where the section above fails, so the plan reads top to bottom
   const P=PL(), full=det.lvl>=3, show=(id,on)=>{ const el=$(id); if(el) el.style.display=on?"":"none"; };
@@ -1976,6 +2077,15 @@ function renderFixes(r,det){
     if(q) q.innerHTML = hyp ? `<div style="font-size:13px;margin-top:4px;color:var(--bad)">Required: the bottom gas is hypoxic shallower than ${Math.ceil(r.minOD)} ft. Breathe a travel gas on the descent and switch deeper than that.</div>` : "";
     if(g) g.style.borderColor = hyp && !(r.trv&&r.trv.sw>=r.minOD) ? "var(--bad)" : ""; }
   show("#pRouteCard", !!r.OH);
+  show("#pRepCard", !!P.rep?.on);
+  { const el=$("#pNdlFactors");
+    if(el){ if(canPlan("deco",P) || P.adv.ds){ el.innerHTML=""; }
+      else { const gf=r.gf||{auto:[],factors:[]}, fm=x=>x===Infinity?"no limit":Math.floor(x)+" min";
+        el.innerHTML=`<div class="gate" style="margin-top:8px"><b style="font-size:14px">Things that shorten today's no-deco limit</b>
+          ${gf.auto.length?`<div class="muted" style="font-size:12px;margin-top:4px">From this plan: ${gf.auto.map(esc).join(" · ")}</div>`:""}
+          <div class="row" style="gap:6px;margin-top:6px">${Object.entries(GF_FACTORS_MANUAL).map(([k,v])=>`<label class="chip"><input type="checkbox" data-gff="${k}" ${P.gff?.[k]?"checked":""}> ${esc(v)}</label>`).join("")}</div>
+          <div style="font-size:13px;margin-top:6px">${r.ndlPlain!=null&&r.ndlBase!=null?`No-deco limit <b>${fm(r.ndlBase)}</b> (${fm(r.ndlPlain)} without these)`:`None apply — no-deco limit ${r.ndlBase==null?"—":fm(r.ndlBase)}`}</div></div>`; } } }
+  { const c=$('#v-plan [data-rep="on"]'); if(c) c.checked=!!P.rep?.on; }
   show("#pRuleSel", canPlan("rule",P));
   { const o=$('#v-plan [data-k="rule"] option[value="all"]'); if(o) o.disabled = P.venue==="overhead"; }
   { const v=$('#v-plan [data-k="venue"] option[value="overhead"]'); if(v) v.disabled = !canPlan("oh",P) && P.venue!=="overhead"; }
@@ -2002,7 +2112,7 @@ function renderRoute(r){
 function renderPlanOut(){
   const P=PL(); let r=planCalc(); const det=planDetail();
   if(canPlan("deco",P) && !P.adv.ds && r.ndlBase!=null && r.ndlBase!==Infinity && r.btUse>r.ndlBase){ P.adv.ds=true; save(); renderPlan(); return; }
-  renderFixes(r,det); renderRoute(r);
+  renderFixes(r,det); renderRoute(r); renderRepOut(r);
   $("#pAssume").innerHTML = `Kept simple for this instar: <b>${P.rule==="all"?"ascend at rock bottom":P.rule==="half"?"turn at half of usable gas":"turn at a third of usable gas"}</b>; rock bottom assumes two divers at ${num(P.stress)===0?"2× their SAC":(+P.stress).toFixed(2)+" cfm each"} under stress, ${P.ptime} min to sort out a problem, then ${P.arate} ft/min to the surface. Set Detail to Standard to change these.`;
   $("#pCustom").style.display = P.team.some(m=>m.tank==="custom")||(P.adv.dg&&(P.dg||[]).some(g=>g.tank==="custom"))?"grid":"none";
   renderGfWhy(r); renderSiteNotes();
@@ -2152,7 +2262,7 @@ function renderDecoOut(r){
       h += `<div class="out" style="margin-top:6px">
         <div class="big"><div class="k">First stop</div><div class="v">${s.noDeco?"—":s.stops[0].d+" <small>ft</small>"}</div><div class="s">GF ${r.gf.lo}/${r.gf.hi}</div></div>
         <div class="big"><div class="k">Stop time · run time</div><div class="v">${s.decoT} <small>min · RT ${Math.ceil(s.rt)}</small></div><div class="s">Time to surface ${Math.ceil(s.tts)} min · deco:bottom ${(s.decoT/num(P.bt)).toFixed(2)}:1</div></div>
-        <div class="big"><div class="k">Oxygen exposure</div><div class="v" style="color:${s.cns>80?"var(--warn)":"inherit"}">${Math.round(s.cns)}% <small>CNS</small></div><div class="s">${Math.round(s.otu)} OTU (single-exposure limits)</div></div></div>`;
+        <div class="big"><div class="k">Oxygen exposure</div><div class="v" style="color:${s.cns>80?"var(--warn)":"inherit"}">${Math.round(s.cns)}% <small>CNS</small></div><div class="s">${Math.round(s.otu)} OTU${s.cnsCarry?` · includes ${Math.round(s.cnsCarry)}% CNS carried from earlier dives`:" (single-exposure limits)"}</div></div></div>`;
       if(!s.noDeco){
         let rt = 0, rows=""; const firstDepth=s.stops[0]?.d;
         // running time at end of each stop
@@ -2167,7 +2277,7 @@ function renderDecoOut(r){
         r.members.forEach(x=>x.dgNeed.forEach(n=>{ if(!n.ok) h+=`<div class="alert bad">${esc(diverName(x.m.diver))}: ${n.g.name} needs ${f0(n.psi)} psi but the cylinder starts at ${f0(n.g.fill)}.</div>`; }));
       }
       if(s.cns>80) h+=`<div class="alert">CNS ${Math.round(s.cns)}% exceeds 80% — reduce pO₂ or exposure.</div>`;
-      if(s.otu>300) h+=`<div class="alert">${Math.round(s.otu)} OTU for one dive — check the daily limit.</div>`;
+      if(s.otu>300) h+=`<div class="alert">${Math.round(s.otu)} OTU${s.otuCarry?" including earlier dives today":" for one dive"} — check the daily limit.</div>`;
       h += `<p class="muted" style="margin:8px 0 0">Planning aid. Cross-check every schedule against an independent decompression planner and your computer before diving it.</p>`;
     }
   }
@@ -2244,6 +2354,8 @@ function briefText(r){
     L.push(`Overhead: flow ${r.oh.flow} (exit time ÷ entry time) · rock bottom from the exit at ${r.entD} ft`);
     (r.oh.legs||[]).forEach(l=>L.push(`  Sharing ${l.from} → ${l.to} (${Math.round(l.min*10)/10} min): ${l.checks.map(c=>`${r.members.length>1?diverName(c.x.m.diver)+" ":""}has ${f0(c.havePsi)} / needs ${f0(c.needPsi)}${c.ok?"":" ⚠ SHORT"}`).join(", ")}`));
   }
+  if(r.repOn && r.repInfo && !r.repInfo.error){ const ri=r.repInfo, fm=v=>v===Infinity?"none":Math.floor(v)+" min";
+    L.push(`Repetitive: ${ri.dives.length} earlier dive${ri.dives.length>1?"s":""} today · last surface interval ${ri.lastSi} min · no-deco limit ${fm(ri.now)} (first dive ${fm(ri.first)}) · carried CNS ${Math.round(ri.cns)}%`); }
   // DIVE RUN — shared steps, per-diver pressures where they differ
   const ms=r.members;
   if(ms.length && ms[0].run){
@@ -2369,6 +2481,13 @@ $("#v-plan").addEventListener("input", e=>{
     const k=path[path.length-1]; o[k] = t.type==="checkbox" ? t.checked : (["tank","stRule"].includes(k) ? t.value : (t.value===""?"":+t.value));
     save(); if(t.type==="checkbox"||k==="stRule") renderPlan(); else renderPlanOut(); return; }
   if(t.dataset.gff){ (P.gff ??= {})[t.dataset.gff]=t.checked; save(); renderPlanOut(); return; }
+  if(t.dataset.rep){ P.rep ??= {on:false,dives:[]};
+    if(t.dataset.rep==="on"){ P.rep.on=t.checked; if(t.checked && !P.rep.dives.length) P.rep.dives.push(repDefaultDive()); save(); renderPlan(); return; }
+    const path=t.dataset.rep.split("."); let o=P.rep; for(let i=0;i<path.length-1;i++){ const k=path[i]; o[k] ??= (/^\d+$/.test(path[i+1])?[]:{}); o=o[k]; }
+    const k=path[path.length-1]; o[k] = k==="profile" ? t.value : (t.value===""?"":+t.value);
+    save(); if(k==="profile"){ if(t.value==="levels"){ const d=P.rep.dives[+path[1]]; if(!(d.levels||[]).length) d.levels=[{d:d.depth,t:""}]; } renderPlan(); } else renderPlanOut(); return; }
+  if(t.dataset.replog){ const l=S.log.find(x=>String(x.id)===t.value); if(l){ P.rep ??= {on:true,dives:[]};
+      P.rep.dives.push({depth:num(l.maxD),bt:num(l.time),o2:num(l.o2)||21,he:0,profile:num(l.avgD)>0?"avg":"square",avg:num(l.avgD)||"",levels:[],si:60}); save(); renderPlan(); } return; }
   if(t.dataset.dg){ const [i,f]=t.dataset.dg.split("."); P.dg[+i][f] = f==="tank"?t.value:(t.value===""?"":+t.value); save(); renderPlanOut(); return; }
   if(t.dataset.k!==undefined){ const k=t.dataset.k; P[k] = (t.type==="number"||["water","po2","dens","arate","stress","ptime","ss","cCount","lastStop","desc","dgRes"].includes(k)) ? (t.value===""?"":+t.value) : t.value;
     if(k==="o2") document.querySelectorAll('#v-plan [data-k="o2"]').forEach(el=>{ if(el!==t) el.value=P.o2; });
@@ -2385,6 +2504,10 @@ $("#v-plan").addEventListener("click", e=>{
   const P=PL(), b=e.target.closest("button"); if(!b) return;
   if(b.id==="pObjAuto"){ const c=objectiveCandidates(P); const keys=autoPickObjectives({...P,obj:[]});
     P.obj=keys.map(k=>{ const x=c.find(y=>y.key===k); return {stage:+P.stage,key:x.key,kind:x.kind,i:x.i,text:x.text}; }); save(); renderObjectives(); renderPlanOut(); return; }
+  if(b.dataset.repadd){ (P.rep.dives ??= []).push(repDefaultDive()); save(); renderPlan(); return; }
+  if(b.dataset.repdel){ P.rep.dives.splice(+b.dataset.repdel,1); if(!P.rep.dives.length) P.rep.on=false; save(); renderPlan(); return; }
+  if(b.dataset.replvadd){ const d=P.rep.dives[+b.dataset.replvadd]; (d.levels ??= []).push({d:"",t:""}); save(); renderPlan(); return; }
+  if(b.dataset.replvdel){ const [i,j]=b.dataset.replvdel.split(".").map(Number); P.rep.dives[i].levels.splice(j,1); save(); renderPlan(); return; }
   if(b.dataset.addst){ (P.stages??=[]).push({tank:"al80",fill:3000}); save(); renderPlan(); return; }
   if(b.dataset.rmst){ P.stages.splice(+b.dataset.rmst,1); save(); renderPlan(); return; }
   if(b.dataset.objrm){ P.obj=P.obj.filter(o=>o.key!==b.dataset.objrm); save(); renderObjectives(); renderPlanOut(); return; }
