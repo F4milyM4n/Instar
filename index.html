@@ -526,7 +526,7 @@ const ARATE_OPTS = [10, 20, 30];
 
 // Version: MAJOR.MINOR.PATCH — major = new capability or a change to how plans or progress work;
 // minor = refinements and added content; patch = fixes only (omitted when 0). Keep sw.js VERSION in step.
-const APP_VERSION = "7.0";
+const APP_VERSION = "8.0";
 { const v=document.getElementById("appVer"); if(v) v.textContent=APP_VERSION; }
 const PRINCIPLES = ["Plan the dive","Conserve energy","Use safety equipment","Manage decompression","Maintain situational awareness","Maintain team integrity"];
 
@@ -1425,6 +1425,16 @@ function modelNDL(depth,g,gfHi,W,asc,desc,T0){
 /* ---- Repetitive dives: carry tissue loading and oxygen exposure from earlier dives ----
    Each earlier dive is rebuilt from its profile choice, ascended with any stops the model requires (on its own gas),
    then off-gassed on air through its surface interval. */
+/* ---- Gradual GF high: from the no-stop margin to the decompression margin as the obligation grows ----
+   Stops are first worked out at the no-stop GF high; GF high then slides toward the decompression GF high,
+   reaching it at GF_RAMP_MIN minutes of stops. Preset and custom choices stay fixed (ns === hi). */
+const GF_RAMP_MIN=20;
+function decoRamp(base,gf){
+  const ns=(gf.ns??gf.hi)/100, hi=gf.hi/100;
+  const s0=decoPlan({...base,gfHi:ns}); if(s0.error||s0.noDeco||ns<=hi){ s0.gfHiUsed=Math.round(ns*100); return s0; }
+  const g=ns-(ns-hi)*Math.min(1,s0.decoT/GF_RAMP_MIN);
+  const s=decoPlan({...base,gfHi:g}); s.gfHiUsed=Math.round(g*100); return s;
+}
 const REP_PROFILES={square:"Square — all of it at max depth", avg:"From average depth", deep:"Deep-weighted multilevel (estimate)", shallow:"Shallow-weighted multilevel (estimate)", levels:"Enter levels"};
 function repLevels(d,desc){
   const D=num(d.depth)||0, bt=num(d.bt)||0, tb=Math.max(0,bt-D/desc), A=num(d.avg)||0;
@@ -1440,7 +1450,8 @@ function repCalc(dives,gf,W,asc,desc,last,square){
   for(const d of dives){
     const D=num(d.depth)||0, bt=num(d.bt)||0; if(!(D>0&&bt>0)) continue;
     const g={o2:Math.min(1,Math.max(0.08,(num(d.o2)||21)/100)), he:Math.min(0.9,Math.max(0,(num(d.he)||0)/100))};
-    const s=decoPlan({depth:D,bt,bottom:g,deco:[],gfLo:gf.lo/100,gfHi:gf.hi/100,W,asc,desc,last,T0:T,levels:square?null:repLevels(d,desc)});
+    const base={depth:D,bt,bottom:g,deco:[],gfLo:gf.lo/100,W,asc,desc,last,T0:T,levels:square?null:repLevels(d,desc)};
+    const s=decoRamp(base,gf);
     if(s.error) return {error:s.error};
     T=s.T; cns+=s.cns; otu+=s.otu;
     const si=Math.max(0,num(d.si)||0);
@@ -1509,7 +1520,8 @@ function gfSelect(P){
   if(["Moderate","Strong"].includes(P.current)) auto.push(`${P.current} current (exertion)`);
   if(P.rep?.on && (P.rep.dives||[]).length) auto.push(`Repetitive dive (${P.rep.dives.length} earlier dive${P.rep.dives.length>1?"s":""} today)`);
   if(D>100 || he>0) auto.push(he>0?"Trimix / deep exposure":"Depth beyond 100 ft");
-  if(P.adv?.ds && P.team.some(m=>!stageStatus(m.diver,7).complete)) auto.push("Team member hasn't completed Instar 7 (new to planned deco)");
+  const newDeco = P.adv?.ds && P.team.some(m=>!stageStatus(m.diver,7).complete);
+  if(newDeco) auto.push("Team member hasn't completed Instar 7 (new to planned deco)");
   const manual = Object.keys(GF_FACTORS_MANUAL).filter(k=>P.gff?.[k]).map(k=>GF_FACTORS_MANUAL[k]);
   const factors=[...auto,...manual];
   const mode=P.gfMode||"suggest";
@@ -1518,8 +1530,12 @@ function gfSelect(P){
   else if(mode==="shallow"){ lo=50; hi=80; why="Controlled trials of air decompression found that moving stop time from shallow to deep stops, with total time unchanged, increased DCS. A GF low of 50 avoids adding deep-stop time; GF high 80 keeps a surfacing margin below the raw Bühlmann limit."; }
   else if(mode==="custom"){ lo=Math.min(100,Math.max(10,num(P.gfLo)||50)); hi=Math.min(100,Math.max(lo,num(P.gfHi)||80)); why="Custom values. GF low sets how deep the first stop is (lower = deeper); GF high sets the surfacing margin (lower = longer shallow stops)."; }
   else { lo=50; hi=Math.max(65,80-5*factors.length);
-    why=`Starts from 50/80 (shallow-weighted, per deep-stop trial findings) and lowers GF high by 5 for each risk factor present (floor 65)${factors.length?"":" — none present"}. GF high is the lever because it lengthens the shallow stops, where the trial data favor spending extra time. The 5-point step is a planning convention, not a validated dose-response.`; }
-  return {lo,hi,why,factors,auto,mode};
+    why=`Starts from 50/80 (shallow-weighted, per deep-stop trial findings) and lowers GF high by 5 for each risk factor present (floor 65)${factors.length?"":" — none present"}. GF high is the lever because it lengthens the shallow stops, where the trial data favor spending extra time. The 5-point step is a planning convention, not a validated dose-response. No-stop dives use GF high 90 (less 5 per risk factor, floor 70): with no stops only GF high matters, a direct ascent is available, and the safety stop adds margin the limit doesn\'t count. Once stops are owed, GF high slides from the no-stop value to the decompression value, reaching it at 20 min of stops, so the margin grows with the obligation instead of jumping.`; }
+  // No-stop dives: only GF high matters (no stops to place). Suggested mode uses 90, less 5 per risk factor (floor 70);
+  // a preset or custom choice applies to no-stop dives too.
+  // "new to planned deco" only lowers the decompression end, so turning decompression on doesn't shorten the no-stop limit
+  const ns = mode==="suggest" ? Math.max(70, 90-5*(factors.length-(newDeco?1:0))) : hi;
+  return {lo,hi,ns,why,factors,auto,mode};
 }
 
 function planCalc(){
@@ -1560,17 +1576,17 @@ function planCore(ov){
   const lastStop=num(P.lastStop)||20;
   const repR = repOn ? repCalc(P.rep.dives,gf,W,asc,desc,lastStop,false) : null;
   const T0 = repR && !repR.error ? repR.T : null;
-  const mNDL = modelNDL(D,bottom,gf.hi/100,W,asc,desc,T0);
+  const mNDL = modelNDL(D,bottom,gf.ns/100,W,asc,desc,T0);
   let repInfo=null;
   if(repR && !(ov&&ov.quick)){
     if(repR.error) repInfo={error:repR.error};
     else {
-      const first = modelNDL(D,bottom,gf.hi/100,W,asc,desc);
+      const first = modelNDL(D,bottom,gf.ns/100,W,asc,desc);
       const sq = P.rep.dives.some(d=>d.profile&&d.profile!=="square") ? repCalc(P.rep.dives,gf,W,asc,desc,lastStop,true) : null;
-      const sqNdl = sq && !sq.error ? modelNDL(D,bottom,gf.hi/100,W,asc,desc,sq.T) : null;
+      const sqNdl = sq && !sq.error ? modelNDL(D,bottom,gf.ns/100,W,asc,desc,sq.T) : null;
       // extra surface time after the last dive that brings this dive's limit back to within 5% of a first dive
       let clean=null;
-      if(first!==Infinity && mNDL<first*0.95){ const T=tissClone(T0); for(let m=15;m<=24*60;m+=15){ tissSeg(T,0,0,15,{o2:0.21,he:0},W); if(modelNDL(D,bottom,gf.hi/100,W,asc,desc,T)>=first*0.95){ clean=m; break; } } }
+      if(first!==Infinity && mNDL<first*0.95){ const T=tissClone(T0); for(let m=15;m<=24*60;m+=15){ tissSeg(T,0,0,15,{o2:0.21,he:0},W); if(modelNDL(D,bottom,gf.ns/100,W,asc,desc,T)>=first*0.95){ clean=m; break; } } }
       repInfo={first, now:mNDL, sqNdl, clean, cns:repR.cns, otu:repR.otu, dives:repR.dives, lastSi:repR.dives.length?repR.dives[repR.dives.length-1].si:0};
     }
   }
@@ -1606,8 +1622,8 @@ function planCore(ov){
       const out_cf=Math.max(0,fill-(drop??ret))/100*tk.tf, ret_cf=drop!=null?Math.max(0,drop-ret)/100*tk.tf:0;
       return {i,tk,fill,drop,ret,out_cf,ret_cf,usable_cf:out_cf+ret_cf}; }) : [];
   const stagesUsable = stagesInfo.reduce((a,s)=>a+s.usable_cf,0), stagesOut = stagesInfo.reduce((a,s)=>a+s.out_cf,0);
-  const modelOpts = (depth,bt)=>({depth,bt,bottom,deco:[...usableDgs,...travelAsc],travel:trv&&trv.sw>0?trv:null,gfLo:gf.lo/100,gfHi:gf.hi/100,W,asc,desc,last:num(P.lastStop)||20,T0});
-  const sched = P.adv?.ds && D>0 && btUse>0 ? decoPlan(modelOpts(D,btUse)) : null;
+  const modelOpts = (depth,bt)=>({depth,bt,bottom,deco:[...usableDgs,...travelAsc],travel:trv&&trv.sw>0?trv:null,gfLo:gf.lo/100,W,asc,desc,last:num(P.lastStop)||20,T0});
+  const sched = P.adv?.ds && D>0 && btUse>0 ? decoRamp(modelOpts(D,btUse),gf) : null;
   if(sched && !sched.error && repR && !repR.error){ sched.cnsCarry=repR.cns; sched.otuCarry=repR.otu; sched.cns+=repR.cns; sched.otu+=repR.otu; }   // oxygen clocks include earlier dives
   // rock-bottom target: first gas switch if deco gas carried, else surface; plus any required stops breathed on bottom gas
   const rbTarget = (usableDgs.length||travelAsc.length) ? Math.max(...[...usableDgs,...travelAsc].map(g=>g.sw)) : 0;
@@ -1814,9 +1830,9 @@ function planCore(ov){
   }
   const gasMin = members.length ? Math.min(...members.map(x=>x.gasMin)) : 0;
   const tblNdl = ndlRow ? ndlRow[1] : null;
-  const ndlBase = tblNdl==null ? mNDL : Math.min(tblNdl, mNDL);
+  const ndlBase = mNDL;
   // the same limit without today's risk factors, to show what they cost
-  const ndlPlain = gf.factors.length && gf.mode==="suggest" && !(ov&&ov.quick) ? (()=>{ const m=modelNDL(D,bottom,0.80,W,asc,desc,T0); return tblNdl==null?m:Math.min(tblNdl,m); })() : null;
+  const ndlPlain = gf.factors.length && gf.mode==="suggest" && !(ov&&ov.quick) ? (()=>{ return modelNDL(D,bottom,0.90,W,asc,desc,T0); })() : null;
   const ndl = P.adv?.ds ? null : ndlBase;
   const limits = OH ? [["Gas in and out",btUse||Infinity]] : [[P.rule==="all"?"Gas to rock bottom":"Gas to turn",gasMin],["Planned",btUse||Infinity]]; if(ndl!=null) limits.push(["NDL",ndl]);
   const lim = limits.reduce((a,b)=>b[1]<a[1]?b:a);
@@ -1824,7 +1840,7 @@ function planCore(ov){
   const bt=btUse||0;
   // The most likely errors are one increment past plan: the next deeper depth (+10 ft) and the next longer time (+5 min)
   const cont = !(ov&&ov.quick) && D>0 && bt>0 ? [["10 ft deeper",D+10,bt],["5 min longer",D,bt+5]].map(([lab,d,t])=>{
-    const s=decoPlan(modelOpts(d,t)); if(s.error) return {lab,d,t,err:s.error};
+    const s=decoRamp(modelOpts(d,t),gf); if(s.error) return {lab,d,t,err:s.error};
     const ata_d=d/W+1;
     const bgUse = members.map(x=>({x, psi: Math.ceil(Math.max(0,x.sac*(s.use.bottom||0) - Math.min(stagesUsable, x.sac*((s.useBP||{}).bottom||0)))/x.tk.tf*100/100)*100}));
     const worst = bgUse.reduce((a,b)=>(b.x.fill-b.psi)<(a.x.fill-a.psi)?b:a, bgUse[0]);
@@ -1971,7 +1987,7 @@ function renderAdvStatic(){
   // GF manual factors + mode
   const gf=gfSelect(P);
   $("#pModel").innerHTML = `
-    <div class="row" style="justify-content:space-between"><b>Decompression model</b><span class="pill">Bühlmann ZHL-16C · GF ${gf.lo}/${gf.hi}</span></div>
+    <div class="row" style="justify-content:space-between"><b>Decompression model</b><span class="pill">Bühlmann ZHL-16C · GF ${gf.lo}/${gf.ns>gf.hi?gf.ns+"→"+gf.hi:gf.hi}</span></div>
     <div class="grid" style="margin-top:8px">
       <div><label>Gradient factors</label><select data-k="gfMode">
         <option value="suggest" ${gf.mode==="suggest"?"selected":""}>Recommended from risk factors</option>
@@ -2015,7 +2031,7 @@ function renderStBox(){
 function renderGfWhy(r){
   const gf=r.gf, el=$("#pGfWhy"); if(!el) return;
   el.innerHTML = `<p class="muted" style="margin:8px 0 0">${gf.why}</p>${gf.mode==="suggest"&&gf.auto.length?`<p class="muted" style="margin:4px 0 0">Detected from this plan: ${gf.auto.map(esc).join(" · ")}</p>`:""}`;
-  $("#pModel .pill").textContent = `Bühlmann ZHL-16C · GF ${gf.lo}/${gf.hi}`;
+  $("#pModel .pill").textContent = `Bühlmann ZHL-16C · GF ${gf.lo}/${gf.ns>gf.hi?gf.ns+"→"+gf.hi:gf.hi}`;
 }
 const stopStr = s => s.noDeco ? "No stops required" : s.stops.map(x=>`${x.d}′ ${x.t}${x.sw?` (${gasName(x.g)})`:""}`).join(" · ");
 
@@ -2120,11 +2136,10 @@ function renderPlanOut(){
   const gname = gasName({o2:r.fo2,he:r.fhe});
   const maxD=Math.floor(Math.min(r.mod,r.densMax)), byDens=r.densMax<r.mod;
   $("#pO2Lbl").textContent = det.lvl===1 ? `${gname} · max depth ${maxD} ft (${byDens?"gas density":"pO₂"}) · pO₂ MOD ${Math.floor(r.mod)} · density ${Math.floor(r.densMax)}` : `${gname} · MOD ${Math.floor(r.mod)} ft @ ${(+P.po2).toFixed(1)} · ${r.rho.toFixed(1)} g/L at ${r.D} ft`;
-  const tblTxt = r.tblNdl===Infinity?"no limit":r.tblNdl!=null?`${r.tblNdl} min`:(r.fhe>0?"n/a (helium)":"beyond table");
   const mTxt = r.mNDL===Infinity?"no limit":`${r.mNDL} min`;
   const ndlCard = P.adv.ds
-    ? `<div class="big"><div class="k">Decompression</div><div class="v">${r.sched&&!r.sched.error?(r.sched.noDeco?"None":`${r.sched.decoT} <small>min stops</small>`):"—"}</div><div class="s">Model NDL ${mTxt} · Table ${tblTxt}</div></div>`
-    : `<div class="big"><div class="k">No-deco limit</div><div class="v">${r.ndl===Infinity?"No limit":`${r.ndl} min`}</div><div class="s">Table ${tblTxt}${r.ndlRow?(r.fo2>0.21?` (${gasName({o2:r.fo2,he:0})}: EAD ${Math.max(0,Math.round(r.ead))} ft → ${r.ndlRow[0]} ft row)`:` (air, ${r.ndlRow[0]} ft row)`):""} · Model GF ${r.gf.hi}: ${mTxt}. Uses the shorter.</div></div>`;
+    ? `<div class="big"><div class="k">Decompression</div><div class="v">${r.sched&&!r.sched.error?(r.sched.noDeco?"None":`${r.sched.decoT} <small>min stops</small>`):"—"}</div><div class="s">No-stop limit ${mTxt} at GF ${r.gf.ns} · stops at GF ${r.gf.lo}/${r.sched&&!r.sched.error?r.sched.gfHiUsed:r.gf.hi}</div></div>`
+    : `<div class="big"><div class="k">No-deco limit</div><div class="v">${r.ndl===Infinity?"No limit":`${r.ndl} min`}</div><div class="s">Model, GF high ${r.gf.ns}${r.gf.factors.length&&r.gf.mode==="suggest"?` (90 less ${r.gf.factors.length} risk factor${r.gf.factors.length>1?"s":""})`:""}${r.repOn?" · includes earlier dives":""}</div></div>`;
   $("#pProfile").innerHTML = ndlCard + `
     <div class="big" data-lvl="2"><div class="k">Gas: ${gname}</div><div class="v" style="color:${r.D>r.mod?"var(--warn)":"inherit"}">${r.po2.toFixed(2)} <small>pO₂</small></div><div class="s">MOD at ${(+P.po2).toFixed(1)}: ${Math.floor(r.mod)} ft${r.fo2<0.18?` · <span style="color:var(--bad)">min depth ${Math.ceil(r.minOD)} ft (hypoxic)</span>`:""}</div></div>
     <div class="big" data-lvl="2"><div class="k">Gas density</div><div class="v" style="color:${r.rho>r.densLim?"var(--warn)":"inherit"}">${r.rho.toFixed(2)} <small>g/L at ${r.D} ft</small></div><div class="s">Max depth at ${r.densLim} g/L: ${Math.floor(r.densMax)} ft${r.densLim<6.2?` · at 6.2: ${Math.floor(r.densHardMax)} ft`:""}</div></div>
@@ -2165,7 +2180,6 @@ function renderPlanOut(){
   if(!P.adv.ds && r.ndl!=null && r.ndl!==Infinity && r.btUse>r.ndl) a+=`<div class="alert">Planned time ${Math.round(r.btUse)} min exceeds the ${r.ndl}-min no-deco limit${P.adv.ds?"":" — "+(canPlan("deco",P)?"see the decompression section below":"shorten the dive or plan shallower; planned decompression starts at Instar 7")}.</div>`;
   if(r.rho>6.2) a+=`<div class="alert">Gas density ${r.rho.toFixed(2)} g/L exceeds the 6.2 g/L absolute maximum — high risk of CO₂ retention.</div>`;
   else if(r.rho>r.densLim) a+=`<div class="alert">Gas density ${r.rho.toFixed(2)} g/L exceeds the ${r.densLim} g/L limit (max ${Math.floor(r.densMax)} ft on this gas).</div>`;
-  if(!P.adv.ds && !r.ndlRow && r.fhe===0) a+=`<div class="alert">Depth is beyond the air no-decompression table; NDL shown is from the model only.</div>`;
   if(r.OH && r.oh && r.oh.inMin<2) a+=`<div class="alert bad">Almost no time inside: rock bottom from the exit, ascent gas${P.adv.ds?" and decompression on bottom gas":""} use nearly all the usable gas (turn after ${Math.max(0,Math.round(r.oh.inMin*10)/10)} min). Use larger cylinders${canPlan("deco",P)?", add a deco gas":""}${canPlan("st",P)?", add stages":""}, or choose a shallower site.</div>`;
   if(!r.OH && num(P.bt)>r.gasMin) a+=`<div class="alert bad">Planned bottom time ${P.bt} min exceeds the ${Math.floor(r.gasMin)} min of gas available at ${r.D} ft before the ${P.rule==="all"?"rock-bottom ascent":"turn"} (limiting diver) — ${canPlan("st",P)?"see back gas and gas extension below":"shorten the dive, plan shallower or use a larger cylinder"}.</div>`;
   if(P.stage){
@@ -2298,7 +2312,7 @@ function renderRatio(r){
         <td>${c.s.noDeco?"—":c.ratio.toFixed(2)+":1"}</td>
         <td style="color:${short.length?"var(--bad)":"inherit"}">${c.bgUse.map(b=>`${esc(diverName(b.x.m.diver))}: ${f0(b.psi)}`).join("<br>")}</td></tr>`;
     }).join("")}</table></div>
-    <p class="muted" style="margin:6px 0 0">Schedules from the same model and GF ${r.gf.lo}/${r.gf.hi} on ${gasesTxt}, ascending at ${P.arate} ft/min. <b>Ratio</b> = stop time ÷ bottom time — memorize these as your no-computer backup. A contingency case ends the dive. Back gas = psi each diver would breathe for the whole profile (no reserve); red means more than they carry. These tables come from the model, for the gases you actually carry.</p>`;
+    <p class="muted" style="margin:6px 0 0">${r.gf.ns>r.gf.hi?`GF high slides from ${r.gf.ns} (no stops) to ${r.gf.hi} as the stops owed at ${r.gf.ns} grow to ${GF_RAMP_MIN} min; GF low ${r.gf.lo}`:`GF ${r.gf.lo}/${r.gf.hi}`}, on ${gasesTxt}, ascending at ${P.arate} ft/min. <b>Ratio</b> = stop time ÷ bottom time — memorize these as your no-computer backup. A contingency case ends the dive. Back gas = psi each diver would breathe for the whole profile (no reserve); red means more than they carry. These tables come from the model, for the gases you actually carry.</p>`;
 }
 
 function renderMath(r){
@@ -2342,7 +2356,7 @@ function briefText(r){
   else L.push(`Profile: max ${r.D} ft, ${r.OH&&r.oh?`overhead — turn at ${Math.floor(r.D/r.desc+r.oh.inMin)} min (${r.oh.limitedBy}), out by ${Math.floor(r.oh.btEff)} min`:`bottom time ${P.bt} min`}, ${gname} (${lvlB>=2?`pO₂ ${r.po2.toFixed(2)}, `:""}max depth ${Math.floor(Math.min(r.mod,r.densMax))} ft — MOD ${Math.floor(r.mod)}, density ${Math.floor(r.densMax)}${r.fhe>0?`, END ${Math.round(r.endFt)} ft`:""})`);
   const lvl=+($("#v-plan").dataset.detail||3);
   if(lvl>=2){ L.push(`Gas density: ${r.rho.toFixed(2)} g/L (limit ${r.densLim}, max ${Math.floor(r.densMax)} ft)`);
-    L.push(`Model: Bühlmann ZHL-16C GF ${r.gf.lo}/${r.gf.hi}${r.gf.factors.length?` (factors: ${r.gf.factors.join(", ")})`:""}`); }
+    L.push(`Model: Bühlmann ZHL-16C GF ${r.gf.lo}/${r.sched&&!r.sched.error?r.sched.gfHiUsed:r.gf.hi}${r.gf.ns>r.gf.hi?` (GF high slides ${r.gf.ns}→${r.gf.hi} with the stops owed)`:""}${r.gf.factors.length?` (factors: ${r.gf.factors.join(", ")})`:""}`); }
   if(!P.adv.ds && lvlB>1) L.push(`NDL: ${r.ndl===Infinity?"no limit":r.ndl+" min"} · Ascent ${P.arate} ft/min · Stop: ${P.stop}`);
 
   if(P.adv.dg && r.dgs.length) L.push(`Deco gases: ${r.dgs.map(g=>`${g.name} @ ${g.sw} ft (${g.tk.name}, ${g.fill} psi)`).join("; ")}`);

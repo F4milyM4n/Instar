@@ -46,6 +46,15 @@ Instar uses **MAJOR.MINOR.PATCH** numbers, shown in the app's footer:
 
 The number lives in one place in `index.html` (`APP_VERSION`); `sw.js` uses the same number for its cache name so installed apps update.
 
+## What's new in 8.0
+
+**No-stop limits from the model at GF high 90**
+- The no-deco limit now comes only from the decompression model, at GF high 90 for no-stop dives (less 5 per risk factor, floor 70). The table is no longer part of the limit. With no stops only GF high matters, a direct ascent is available, and the safety stop adds margin the limit doesn't count.
+- Air examples: 50 ft 76 min, 60 ft 53, 70 ft 39, 80 ft 29, 100 ft 18 (previously 64, 44, 31, 24, 15).
+- **Gradual shift from no-stop to decompression diving.** Once a dive owes stops, they're first worked out at the no-stop GF high (90); GF high then slides toward the decompression GF high (80) as that obligation grows, reaching it at 20 min of stops. One extra minute past the limit owes about one extra minute of stops — at 60 ft on air: 53 min none, 54 min 1, 56 min 5, 60 min 12, 70 min 30, 80 min 51 (the full decompression margin). The same rule covers the plan, contingencies and earlier dives.
+- Risk factors lower both ends by 5 each. "Team member new to planned decompression" lowers only the decompression end, so planning decompression never shortens the no-stop limit.
+- A preset or custom gradient-factor choice (Instar 7 up) applies to no-stop dives too.
+
 ## What's new in 7.0
 
 **Repetitive dives**
