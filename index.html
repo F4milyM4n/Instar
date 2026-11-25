@@ -251,6 +251,7 @@ table.run td{vertical-align:top}
       <h3>Schedule settings</h3>
       <div class="grid">
         <div><label>Last stop</label><select data-k="lastStop"><option value="20">20 ft</option><option value="10">10 ft</option></select></div>
+        <div><label>Breaks on O₂</label><select data-k="brk"><option value="20/5">5 min every 20 min</option><option value="25/5">5 min every 25 min</option><option value="off">None</option></select></div>
         <div><label>Descent rate</label><select data-k="desc"><option value="30">30 ft/min</option><option value="60">60 ft/min</option><option value="75">75 ft/min</option></select></div>
       </div>
       <p class="muted" style="margin:6px 0 0">Ascent uses the profile's ascent rate.</p>
@@ -526,7 +527,7 @@ const ARATE_OPTS = [10, 20, 30];
 
 // Version: MAJOR.MINOR.PATCH — major = new capability or a change to how plans or progress work;
 // minor = refinements and added content; patch = fixes only (omitted when 0). Keep sw.js VERSION in step.
-const APP_VERSION = "8.0.1";
+const APP_VERSION = "8.1";
 { const v=document.getElementById("appVer"); if(v) v.textContent=APP_VERSION; }
 const PRINCIPLES = ["Plan the dive","Conserve energy","Use safety equipment","Manage decompression","Maintain situational awareness","Maintain team integrity"];
 
@@ -1387,18 +1388,27 @@ function decoPlan(o){
   // First stop: GF-low ceiling at the end of the bottom phase, rounded up to the stop increment (not shallower than the last stop)
   first = Math.max(o.last, Math.ceil(ceilFt(T,o.gfLo,W)/10)*10);
   if(first>=cur) first = cur%10 ? Math.floor(cur/10)*10 : cur;
-  let guard=0;
+  let guard=0, o2run=0, brkLeft=0, brkG=null;
+  // Breaks on O₂: after o.brk.every min on pure O₂, breathe a lower-O₂ gas for o.brk.len min (back gas if breathable, else the previous gas)
+  const brkFor=(d,prev)=>{ const a=d/W+1; return o.bottom.o2*a>=0.16 ? o.bottom : prev; };
   while(cur>0){
     let next = cur%10 ? Math.floor(cur/10)*10 : cur-10;
     if(next>0 && next<o.last) next=0;
     let s = stops.length && stops[stops.length-1].d===cur ? stops[stops.length-1] : null;
-    if(cur%10===0){ const ng=gasAt(cur); if(ng && ng.o2>g.o2){ g=ng; if(!s){ s={d:cur,t:0,g,sw:true}; stops.push(s);} else { s.g=g; s.sw=true; } add(cur,cur,1,g); s.t+=1; } }
+    if(cur%10===0){ const ng=gasAt(cur); if(ng && ng.o2>g.o2){ if(ng.o2>=0.99){ brkG=brkFor(cur,g); o2run=1; } g=ng; if(!s){ s={d:cur,t:0,g,sw:true}; stops.push(s);} else { s.g=g; s.sw=true; } add(cur,cur,1,g); s.t+=1; } }
     while(true){
       const c=tissClone(T); tissSeg(c,cur,next,(cur-next)/o.asc,g,W);
       if(cur>first) break;                         // still travelling to the first stop
       if(ceilFt(c,gfAt(next),W) <= next+1e-6) break;
       if(!s){ s={d:cur,t:0,g}; stops.push(s); }
-      add(cur,cur,1,g); s.t+=1;
+      let mg=g;
+      if(o.brk && g.o2>=0.99 && brkG){ if(brkG.o2*(cur/W+1)<0.16) brkG=null; }
+      if(o.brk && g.o2>=0.99 && brkG){
+        if(brkLeft>0){ mg=brkG; brkLeft--; }
+        else if(o2run>=o.brk.every){ mg=brkG; brkLeft=o.brk.len-1; o2run=0; s.breaks=(s.breaks||0)+1; s.brkG=brkG; }
+        else o2run++;
+      }
+      add(cur,cur,1,mg); s.t+=1;
       if(++guard>2000) return {error:"Decompression exceeds 2000 minutes — profile is outside any sensible plan."};
     }
     add(cur,next,(cur-next)/o.asc,g); cur=next;
@@ -1488,7 +1498,7 @@ const PLAN_DEFAULT = ()=>({
   team:[{diver:S.divers[0].id, tank:"al80", fill:3000, sac:0.5, expo:"5 mm wetsuit", weight:""}],
   cont:{...CONT_DEFAULT}, checks:{}, ...ADV_DEFAULT()
 });
-function ADV_DEFAULT(){ return {travel:{on:false,o2:32,he:0,tank:"al40",fill:3000,sw:"",asc:true}, stages:[], stRule:"thirds", adv:{tmx:false,dg:false,ds:false,st:false}, he:0, endLim:100, gfMode:"suggest", gfLo:50, gfHi:80, gff:{}, lastStop:20, desc:60, dg:[], dgRes:1.5, mixStd:"standard", venue:"open", obj:[], flow:"1", entD:"", rep:{on:false,dives:[]}}; }
+function ADV_DEFAULT(){ return {travel:{on:false,o2:32,he:0,tank:"al40",fill:3000,sw:"",asc:true}, stages:[], stRule:"thirds", adv:{tmx:false,dg:false,ds:false,st:false}, he:0, endLim:100, gfMode:"suggest", gfLo:50, gfHi:80, gff:{}, lastStop:20, desc:60, dg:[], dgRes:1.5, mixStd:"standard", venue:"open", obj:[], flow:"1", entD:"", rep:{on:false,dives:[]}, brk:"20/5"}; }
 function normalizePlan(p){ const d=ADV_DEFAULT(); for(const k in d) if(p[k]==null) p[k]=d[k]; p.adv={...d.adv,...p.adv}; if(p.dens==null) p.dens=5.2; if(!["standard","reduced"].includes(p.mixStd)) p.mixStd="standard"; if(!["suggest","shallow","conservative","custom"].includes(p.gfMode)) p.gfMode="suggest"; return p; }
 // migrate older single-tank gas settings into a plan
 function ensurePlan(){ if(S.plan) return;
@@ -1625,7 +1635,8 @@ function planCore(ov){
       const out_cf=Math.max(0,fill-(drop??ret))/100*tk.tf, ret_cf=drop!=null?Math.max(0,drop-ret)/100*tk.tf:0;
       return {i,tk,fill,drop,ret,out_cf,ret_cf,usable_cf:out_cf+ret_cf}; }) : [];
   const stagesUsable = stagesInfo.reduce((a,s)=>a+s.usable_cf,0), stagesOut = stagesInfo.reduce((a,s)=>a+s.out_cf,0);
-  const modelOpts = (depth,bt)=>({depth,bt,bottom,deco:[...usableDgs,...travelAsc],travel:trv&&trv.sw>0?trv:null,gfLo:gf.lo/100,W,asc,desc,last:num(P.lastStop)||20,T0});
+  const brkSet = /^\d+\/\d+$/.test(P.brk||"") ? {every:+P.brk.split("/")[0], len:+P.brk.split("/")[1]} : null;
+  const modelOpts = (depth,bt)=>({depth,bt,bottom,deco:[...usableDgs,...travelAsc],travel:trv&&trv.sw>0?trv:null,gfLo:gf.lo/100,W,asc,desc,last:num(P.lastStop)||20,T0,brk:brkSet});
   const sched = P.adv?.ds && D>0 && btUse>0 ? decoRamp(modelOpts(D,btUse),gf) : null;
   if(sched && !sched.error && repR && !repR.error){ sched.cnsCarry=repR.cns; sched.otuCarry=repR.otu; sched.cns+=repR.cns; sched.otu+=repR.otu; }   // oxygen clocks include earlier dives
   // rock-bottom target: first gas switch if deco gas carried, else surface; plus any required stops breathed on bottom gas
@@ -2036,7 +2047,7 @@ function renderGfWhy(r){
   el.innerHTML = `<p class="muted" style="margin:8px 0 0">${gf.why}</p>${gf.mode==="suggest"&&gf.auto.length?`<p class="muted" style="margin:4px 0 0">Detected from this plan: ${gf.auto.map(esc).join(" · ")}</p>`:""}`;
   $("#pModel .pill").textContent = `Bühlmann ZHL-16C · GF ${gf.lo}/${gf.ns>gf.hi?gf.ns+"→"+gf.hi:gf.hi}`;
 }
-const stopStr = s => s.noDeco ? "No stops required" : s.stops.map(x=>`${x.d}′ ${x.t}${x.sw?` (${gasName(x.g)})`:""}`).join(" · ");
+const stopStr = s => s.noDeco ? "No stops required" : s.stops.map(x=>`${x.d}′ ${x.t}${x.sw?` (${gasName(x.g)})`:""}${x.breaks?` incl. ${x.breaks} break${x.breaks>1?"s":""}`:""}`).join(" · ");
 
 const PLAN_UNLOCK={dbl:6, rule:6, deco:7, trv:7, oh:8, st:9, tmx:10};   // rule: a turn pressure (halves/thirds); direct-ascent instars ascend at rock bottom
 const canPlan=(k,P)=>(+((P||PL()).stage)||1)>=PLAN_UNLOCK[k];
@@ -2284,10 +2295,16 @@ function renderDecoOut(r){
         let rt = 0, rows=""; const firstDepth=s.stops[0]?.d;
         // running time at end of each stop
         let acc=0; s.segs.forEach(sg=>{ acc+=sg.t; sg.rtEnd=acc; });
-        s.stops.forEach(st=>{ const seg=[...s.segs].reverse().find(sg=>sg.d0===st.d&&sg.d1===st.d); rows+=`<tr class="${st.sw?"sw":""}"><td>${st.d} ft</td><td>${st.t} min</td><td>${seg?Math.ceil(seg.rtEnd):""}</td><td>${gasName(st.g)}${st.sw?" ← switch":""}</td></tr>`; });
+        s.stops.forEach(st=>{ const seg=[...s.segs].reverse().find(sg=>sg.d0===st.d&&sg.d1===st.d); rows+=`<tr class="${st.sw?"sw":""}"><td>${st.d} ft</td><td>${st.t} min</td><td>${seg?Math.ceil(seg.rtEnd):""}</td><td>${gasName(st.g)}${st.sw?" ← switch":""}${st.breaks?`<div class="muted" style="font-size:11px">${st.breaks} break${st.breaks>1?"s":""} on ${gasName(st.brkG)}</div>`:""}</td></tr>`; });
         h += `<div style="overflow-x:auto;margin-top:10px"><table class="ds"><tr><th>Stop</th><th>Time</th><th>Run time</th><th>Gas</th></tr>
           <tr><td>${r.D} ft</td><td>${P.bt} min</td><td>${P.bt}</td><td>${gasName({o2:r.fo2,he:r.fhe})} (bottom)</td></tr>${rows}<tr><td>Surface</td><td></td><td>${Math.ceil(s.rt)}</td><td></td></tr></table></div>`;
       }
+      const bgStopT = s.stops.filter(st=>(st.g.key||"bottom")==="bottom").reduce((a,st)=>a+st.t,0);
+      if(bgStopT>=20) h+=`<div class="alert">${bgStopT} min of stops on back gas — add a deco gas (above) to shorten them${r.usableDgs.length?" or move its switch deeper":""}.</div>`;
+      const o2T = s.stops.filter(st=>st.g.o2>=0.99).reduce((a,st)=>a+st.t,0);
+      if(o2T>20 && !/^\d/.test(P.brk||"")) h+=`<div class="alert">${o2T} min on O₂ with no breaks planned — consider breaks on back gas.</div>`;
+      const nBrk=s.stops.reduce((a,st)=>a+(st.breaks||0),0);
+      if(nBrk) h+=`<p class="muted" style="font-size:12px;margin:6px 0 0">${nBrk} break${nBrk>1?"s":""} on ${gasName(s.stops.find(st=>st.breaks).brkG)} planned into the O₂ stops; the model counts the slower off-gassing, so the stop is longer. The CNS clock doesn't fall during a break under the single-exposure limits — breaks are intermittent-exposure practice to lower seizure risk on long O₂ stops, not a CNS credit.</p>`;
       if(r.usableDgs.length){
         h += `<h3>Deco gas required (reserve ${num(P.dgRes)===2?"×2":"+50%"})</h3><div style="overflow-x:auto"><table class="gt"><tr><th></th>${r.members.map(x=>`<th>${esc(diverName(x.m.diver))}</th>`).join("")}</tr>
           ${r.usableDgs.map((g,gi)=>`<tr><td>${g.name}<div class="muted">${esc(g.tk.name)} · ${g.fill}</div></td>${r.members.map(x=>{ const n=x.dgNeed[gi]; return `<td style="color:${n.ok?"inherit":"var(--bad)"}">${f0(n.psi)}</td>`; }).join("")}</tr>`).join("")}</table></div>`;

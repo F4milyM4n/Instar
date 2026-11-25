@@ -46,6 +46,12 @@ Instar uses **MAJOR.MINOR.PATCH** numbers, shown in the app's footer:
 
 The number lives in one place in `index.html` (`APP_VERSION`); `sw.js` uses the same number for its cache name so installed apps update.
 
+## What's new in 8.1
+
+- **Add a deco gas prompt.** When a plan owes 20 min or more of stops on back gas, an amber alert suggests a deco gas (or a deeper switch).
+- **Breaks on O₂.** Long O₂ stops include a 5-min break on back gas every 20 min (or every 25 min, or none — under schedule settings). The break gas is back gas when it's breathable at the stop, otherwise the previous deco gas. The model counts the slower off-gassing during breaks, so the O₂ stop gets longer; back-gas use includes the breaks. The stop table and brief show how many breaks each stop includes.
+- The CNS clock doesn't fall during a break under the single-exposure limits, and the app says so: breaks are intermittent-exposure practice to lower seizure risk on long O₂ stops, not a CNS credit. A plan with more than 20 min on O₂ and no breaks gets an amber prompt.
+
 ## What's new in 8.0.1
 
 - Cold is now a checkbox in the gradient-factor risk list ("Cold water, or expect to get cold"), so a diver who runs cold can tick it in any water.
