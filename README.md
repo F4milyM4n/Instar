@@ -46,6 +46,12 @@ Instar uses **MAJOR.MINOR.PATCH** numbers, shown in the app's footer:
 
 The number lives in one place in `index.html` (`APP_VERSION`); `sw.js` uses the same number for its cache name so installed apps update.
 
+## What's new in 8.0.1
+
+- Cold is now a checkbox in the gradient-factor risk list ("Cold water, or expect to get cold"), so a diver who runs cold can tick it in any water.
+- Entering a water temperature or changing an exposure suit sets the box: below 60°F, or — with no temperature — a heavy drysuit undergarment or a 7/8/9 semi-dry. A drysuit with a light undergarment doesn't count as cold by itself, and neither does a 7 mm wetsuit. The diver can change the box afterwards.
+- Cold-water dive objectives follow the same temperature-first rule.
+
 ## What's new in 8.0
 
 **No-stop limits from the model at GF high 90**

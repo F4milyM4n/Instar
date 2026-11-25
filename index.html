@@ -526,7 +526,7 @@ const ARATE_OPTS = [10, 20, 30];
 
 // Version: MAJOR.MINOR.PATCH — major = new capability or a change to how plans or progress work;
 // minor = refinements and added content; patch = fixes only (omitted when 0). Keep sw.js VERSION in step.
-const APP_VERSION = "8.0";
+const APP_VERSION = "8.0.1";
 { const v=document.getElementById("appVer"); if(v) v.textContent=APP_VERSION; }
 const PRINCIPLES = ["Plan the dive","Conserve energy","Use safety equipment","Manage decompression","Maintain situational awareness","Maintain team integrity"];
 
@@ -1511,18 +1511,21 @@ function tankOf(id){
 function diverName(id){ return (S.divers.find(d=>d.id===id)||{name:"?"}).name; }
 
 /* ---- Gradient factor selection ---- */
-const GF_FACTORS_MANUAL = {work:"Heavy workload planned", fly:"Flying or driving to altitude after", unwell:"Fatigued, dehydrated or unwell"};
+const GF_FACTORS_MANUAL = {cold:"Cold water, or expect to get cold", work:"Heavy workload planned", fly:"Flying or driving to altitude after", unwell:"Fatigued, dehydrated or unwell"};
+// Cold is a box the diver owns. Entering a water temperature or changing an exposure suit sets it:
+// below 60°F, or (with no temperature) a heavy drysuit undergarment or a semi-dry. A drysuit alone doesn't imply cold.
+function syncCold(){ document.querySelectorAll('#v-plan [data-gff="cold"]').forEach(c=>c.checked=gffOn(PL(),"cold")); }
+function coldAuto(P){ const t=num(P.temp); return t ? t<60 : P.team.some(m=>/semi-dry|heavy undergarment/.test(m.expo||"")); }
+const gffOn=(P,k)=> k==="cold" ? (P.gff?.cold ?? coldAuto(P)) : !!P.gff?.[k];
 function gfSelect(P){
   const D=num(P.depth)||0, he=P.adv?.tmx?(num(P.he)||0):0;
   const auto=[];
-  const cold = (num(P.temp)&&num(P.temp)<60) || P.team.some(m=>/semi-dry|Drysuit/.test(m.expo||""));
-  if(cold) auto.push("Cold water / thermal stress");
   if(["Moderate","Strong"].includes(P.current)) auto.push(`${P.current} current (exertion)`);
   if(P.rep?.on && (P.rep.dives||[]).length) auto.push(`Repetitive dive (${P.rep.dives.length} earlier dive${P.rep.dives.length>1?"s":""} today)`);
   if(D>100 || he>0) auto.push(he>0?"Trimix / deep exposure":"Depth beyond 100 ft");
   const newDeco = P.adv?.ds && P.team.some(m=>!stageStatus(m.diver,7).complete);
   if(newDeco) auto.push("Team member hasn't completed Instar 7 (new to planned deco)");
-  const manual = Object.keys(GF_FACTORS_MANUAL).filter(k=>P.gff?.[k]).map(k=>GF_FACTORS_MANUAL[k]);
+  const manual = Object.keys(GF_FACTORS_MANUAL).filter(k=>gffOn(P,k)).map(k=>GF_FACTORS_MANUAL[k]);
   const factors=[...auto,...manual];
   const mode=P.gfMode||"suggest";
   let lo,hi,why;
@@ -1997,7 +2000,7 @@ function renderAdvStatic(){
       ${gf.mode==="custom"?`<div><label>GF low</label><input type="number" data-k="gfLo" value="${P.gfLo}"></div><div><label>GF high</label><input type="number" data-k="gfHi" value="${P.gfHi}"></div>`:""}
     </div>
     <div id="pGfWhy"></div>
-    ${gf.mode==="suggest"?`<div style="margin-top:6px">${Object.entries(GF_FACTORS_MANUAL).map(([k,l])=>`<label class="chk" style="text-transform:none;letter-spacing:0;color:var(--text);margin:2px 0"><input type="checkbox" data-gff="${k}" ${P.gff?.[k]?"checked":""}> ${l}</label>`).join("")}</div>`:""}`;
+    ${gf.mode==="suggest"?`<div style="margin-top:6px">${Object.entries(GF_FACTORS_MANUAL).map(([k,l])=>`<label class="chk" style="text-transform:none;letter-spacing:0;color:var(--text);margin:2px 0"><input type="checkbox" data-gff="${k}" ${gffOn(P,k)?"checked":""}> ${l}</label>`).join("")}</div>`:""}`;
 }
 function renderStBox(){
   const P=PL(), box=$("#pStBox"), tb=$("#pTravelBox"); if(!box) return;
@@ -2099,7 +2102,7 @@ function renderFixes(r,det){
       else { const gf=r.gf||{auto:[],factors:[]}, fm=x=>x===Infinity?"no limit":Math.floor(x)+" min";
         el.innerHTML=`<div class="gate" style="margin-top:8px"><b style="font-size:14px">Things that shorten today's no-deco limit</b>
           ${gf.auto.length?`<div class="muted" style="font-size:12px;margin-top:4px">From this plan: ${gf.auto.map(esc).join(" · ")}</div>`:""}
-          <div class="row" style="gap:6px;margin-top:6px">${Object.entries(GF_FACTORS_MANUAL).map(([k,v])=>`<label class="chip"><input type="checkbox" data-gff="${k}" ${P.gff?.[k]?"checked":""}> ${esc(v)}</label>`).join("")}</div>
+          <div class="row" style="gap:6px;margin-top:6px">${Object.entries(GF_FACTORS_MANUAL).map(([k,v])=>`<label class="chip"><input type="checkbox" data-gff="${k}" ${gffOn(P,k)?"checked":""}> ${esc(v)}</label>`).join("")}</div>
           <div style="font-size:13px;margin-top:6px">${r.ndlPlain!=null&&r.ndlBase!=null?`No-deco limit <b>${fm(r.ndlBase)}</b> (${fm(r.ndlPlain)} without these)`:`None apply — no-deco limit ${r.ndlBase==null?"—":fm(r.ndlBase)}`}</div></div>`; } } }
   { const c=$('#v-plan [data-rep="on"]'); if(c) c.checked=!!P.rep?.on; }
   show("#pRuleSel", canPlan("rule",P));
@@ -2415,7 +2418,7 @@ function venueOK(text,kind,P){
   if(v==="land") return kind==="exp" || LAND_RX.test(text);
   for(const [rx,need] of NEEDS){ if(!rx.test(text)) continue;
     if(need==="night" && !(P.light==="Night"||P.light==="Dusk / dawn"||v==="overhead")) return false;
-    if(need==="cold" && !((num(P.temp)&&num(P.temp)<65)||P.team.some(m=>/semi-dry|Drysuit|7 mm/.test(m.expo||"")))) return false;
+    if(need==="cold" && !(num(P.temp) ? num(P.temp)<65 : P.team.some(m=>/semi-dry|heavy undergarment|7 mm/.test(m.expo||"")))) return false;
     if(VENUE_RANK[need]!=null && r<VENUE_RANK[need]) return false; }
   return true;
 }
@@ -2505,9 +2508,11 @@ $("#v-plan").addEventListener("input", e=>{
   if(t.dataset.dg){ const [i,f]=t.dataset.dg.split("."); P.dg[+i][f] = f==="tank"?t.value:(t.value===""?"":+t.value); save(); renderPlanOut(); return; }
   if(t.dataset.k!==undefined){ const k=t.dataset.k; P[k] = (t.type==="number"||["water","po2","dens","arate","stress","ptime","ss","cCount","lastStop","desc","dgRes"].includes(k)) ? (t.value===""?"":+t.value) : t.value;
     if(k==="o2") document.querySelectorAll('#v-plan [data-k="o2"]').forEach(el=>{ if(el!==t) el.value=P.o2; });
+    if(k==="temp"){ (P.gff ??= {}).cold = coldAuto(P); syncCold(); }
     save(); if(["light","stage","gfMode","mixStd","venue"].includes(k)) { renderPlan(); } else renderPlanOut(); return; }
   if(t.dataset.m){ const [i,f]=t.dataset.m.split("."); const m=P.team[+i];
     m[f] = ["fill","sac","weight","turnOv"].includes(f) ? (t.value===""?"":+t.value) : t.value;
+    if(f==="expo"){ (P.gff ??= {}).cold = coldAuto(P); syncCold(); }
     if(f==="tank"){ const tk=TANKS.find(x=>x.id===t.value); if(tk && tk.id!=="custom") { m.fill=tk.rated; t.closest(".grid").querySelector(`[data-m="${i}.fill"]`).value=tk.rated; } }
     save(); renderPlanOut(); return; }
   if(t.dataset.c){ P.cont[t.dataset.c]=t.value; save(); $("#pBrief").textContent=briefText(planCalc()); return; }
