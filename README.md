@@ -46,6 +46,13 @@ Instar uses **MAJOR.MINOR.PATCH** numbers, shown in the app's footer:
 
 The number lives in one place in `index.html` (`APP_VERSION`); `sw.js` uses the same number for its cache name so installed apps update.
 
+## What's new in 10.1
+
+**Normoxic trimix from Instar 7**
+- The mixed-gas switch now unlocks at Instar 7 for **normoxic trimix (O₂ 18% or more)**, so decompression dives past the density and narcosis limits of air or nitrox (around 100 ft) have a fix where they're planned. The profile section offers it when pO₂, density or narcosis fails.
+- **Hypoxic mixes (O₂ below 18%) stay at Instar 10.** Below Instar 10 the standard-mix list leaves them out and O₂ can't be set below 18%.
+- Training: Instar 7 adds the limit "Normoxic trimix for depths past the density and narcosis limits of air or nitrox; hypoxic mixes at Instar 10", a prerequisite "Normoxic trimix training (if using helium)", and a knowledge topic on why helium is added and what it costs. Instar 10's qualification is now hypoxic mixed gas.
+
 ## What's new in 10.0
 
 **Team standard 70/85, shallow-weighted**

@@ -223,7 +223,7 @@ table.run td{vertical-align:top}
       <div data-lvl="2"><label>Ascent rate</label><select data-k="arate"><option value="10">10 ft/min</option><option value="20">20 ft/min</option><option value="30">30 ft/min</option></select></div>
       <div><label>Safety stop</label><select data-k="stop"><option>3 min @ 15 ft</option><option>5 min @ 15 ft</option><option>1 min @ 20 ft + 2 min @ 10 ft</option><option>None planned</option></select></div>
     </div>
-    <div class="row fixrow" id="pFixTmx" style="margin-top:10px"><label class="chip"><input type="checkbox" data-adv="tmx"> Mixed gas (helium)</label><span class="muted" style="font-size:12px">Fixes narcosis and density at depth</span></div>
+    <div class="row fixrow" id="pFixTmx" style="margin-top:10px"><label class="chip"><input type="checkbox" data-adv="tmx"> Mixed gas (helium)</label><span class="muted" style="font-size:12px" id="pTmxHint">Fixes narcosis and density at depth</span></div>
     <div id="pTmx" class="tmx"></div>
     <div class="out" style="margin-top:12px" id="pProfile"></div>
     <div id="pTravelBox"></div>
@@ -530,7 +530,7 @@ const ARATE_OPTS = [10, 20, 30];
 
 // Version: MAJOR.MINOR.PATCH — major = new capability or a change to how plans or progress work;
 // minor = refinements and added content; patch = fixes only (omitted when 0). Keep sw.js VERSION in step.
-const APP_VERSION = "10.0";
+const APP_VERSION = "10.1";
 { const v=document.getElementById("appVer"); if(v) v.textContent=APP_VERSION; }
 const PRINCIPLES = ["Plan the dive","Conserve energy","Use safety equipment","Manage decompression","Maintain situational awareness","Maintain team integrity"];
 
@@ -604,7 +604,7 @@ const STAGES = [
  ]},
 {n:7,t:"Planned Decompression",env:"Open water; planned required stops",cfg:"Doubles + decompression cylinder(s)",
  purpose:"Introduce dives with intentional decompression obligations, formal planning, gas switching and contingencies.",pre:[6],
- limits:["Open water only","Decompression within current qualification","Every cylinder analyzed and labeled"],
+ limits:["Open water only","Decompression within current qualification","Every cylinder analyzed and labeled","Normoxic trimix (O₂ 18% or more) for depths past the density and narcosis limits of air or nitrox; hypoxic mixes at Instar 10"],
  items:[
  [["Deco schedule generation and verification","Deco gas quantity and reserve planning","Gas-switch depth/sequence and cylinder-failure contingencies","Bailout and omitted/altered deco planning"],"Prepare and independently cross-check the plan: gases, switch points, stop schedule, reserves and taught contingencies."],
  [["Stable hovering and cylinder handling during staged ascent","Task management while holding stop depth and team position","Carrying two cylinders: deco plus a second deco or travel gas","Time-based gas switches against the dive run"],"Maintain the required stop depth while completing a cylinder-handling or gas-switch task."],
@@ -637,7 +637,7 @@ const STAGES = [
  ]},
 {n:10,t:"Deep Technical Overhead (OC)",env:"Deep cave or complex wreck penetration",cfg:"Mixed-gas open-circuit, multiple stages",
  purpose:"Integrate deep mixed-gas, multi-cylinder and extended-overhead planning. Specialist endpoint.",pre:[9],
- limits:["Separate, specific mixed-gas qualification","Substantial experience required","Support logistics planned"],
+ limits:["Separate, specific hypoxic mixed-gas qualification","Substantial experience required","Support logistics planned"],
  items:[
  [["Mixed-gas selection and analysis","Hypoxic-gas handling protocols","Travel gas for hypoxic bottom mixes: minimum operating depth and switch depth","Multi-stage bottom/deco gas logistics","Support-team, drop-gas and surface logistics","Integrated penetration, bailout and deco planning","[W] Offshore logistics: slack water, current windows and long boat transits","[W] Weather and sea-state abort criteria","[C] Long-penetration logistics: multiple stage drops and distance","[C] Sump planning: dry sections, gear carries and re-entry"],"Produce and cross-check a complete plan: gases, MOD, stages, penetration, exit, deco, reserves and support logistics."],
  [["Managing prolonged workload and equipment burden","Stage rotations and complex task sequences","[W] Descending the shot in current and settling workload and narcosis on arrival","[C] Pacing long penetrations and the return against flow"],"Demonstrate controlled stage rotation and task execution while maintaining depth, trim, team position and awareness."],
@@ -655,10 +655,10 @@ const PRE_CHECKS = {
  4:["Primary and backup lights tested and charged"],
  5:["Nitrox training (if using nitrox)","Own gas analyzer access"],
  6:["Doubles rig assembled and checked","Valve drill practiced on land"],
- 7:["Decompression procedures certification","Deco cylinder rigged and labeled"],
+ 7:["Decompression procedures certification","Deco cylinder rigged and labeled","Normoxic trimix training (if using helium)"],
  8:["Cavern or intro wreck penetration certification","Guideline reel and cutting tools"],
  9:["Cave/wreck penetration certification","Open-water stage drop, pickup and exchange practiced (Instar 8)","Stage-cylinder training (if using stage cylinders)"],
- 10:["Mixed-gas / trimix certification","Support team arranged"]
+ 10:["Hypoxic mixed-gas / trimix certification","Support team arranged"]
 };
 
 /* ---------------- STATE ---------------- */
@@ -799,6 +799,7 @@ const KNOW={
        ["The deep-stop evidence, including the 2011 deep-stop trial","Why shallower-weighted stops are favored",3],
        ["CNS and OTU oxygen clocks","Long deco has its own oxygen limits",3],
        ["Deco gas choice: switch depth at pO₂ 1.6","Why 50% at 70 ft and O₂ at 20 ft",0],
+       ["Normoxic trimix: why helium is added and what it costs","Air and nitrox pass the density and narcosis limits around 100 ft; helium fixes both but adds cost and changes the decompression",0],
        ["Ratio deco: strengths and failure modes","When a ratio is a good backup, and when it isn't",3],
        ["Omitted-deco response and post-dive factors","Exercise, hydration, heat and altitude after the dive",3]],
     qp:3,
@@ -1905,7 +1906,7 @@ function evalMixes(P){
   const set=STD_SETS[P.mixStd]||STD_SETS.standard;
   const at=(m,d)=>{ const fo2=m.o2/100, fhe=m.he/100, fn2=1-fo2-fhe, ata=d/W+1;
     return {po2:fo2*ata, end:(d+W)*(1-fhe)-W, rho:(fo2*1.429+fn2*1.251+fhe*0.179)*ata}; };
-  const rows=set.mixes.map(m=>{
+  const rows=set.mixes.filter(m=>m.o2>=18||canPlan("hyp",P)).map(m=>{
     const p=at(m,D), c=at(m,CD), fo2=m.o2/100;
     const fails=[]; if(p.po2>po2max+1e-9) fails.push("pO₂"); if(p.end>endLim+1e-9) fails.push("END"); if(p.rho>dens+1e-9) fails.push("density");
     // contingency (+20 ft, unplanned): working pO₂ limit (toxicity is abrupt) and the 6.2 g/L absolute density maximum (CO₂).
@@ -1935,6 +1936,7 @@ function enforceUnlocks(P){
   let ch=false; const off=(o,k)=>{ if(o&&o[k]){ o[k]=false; ch=true; } };
   P.adv ??= {};
   if(!canPlan("tmx",P)) off(P.adv,"tmx");
+  if(!canPlan("hyp",P) && num(P.o2)>0 && num(P.o2)<18){ P.o2=18; ch=true; }   // hypoxic bottom gas is an Instar 10 skill
   if(!canPlan("deco",P)){ off(P.adv,"ds"); off(P.adv,"dg"); }
   if(!canPlan("trv",P)) off(P.travel,"on");
   if(!canPlan("st",P)) off(P.adv,"st");
@@ -2065,7 +2067,7 @@ function renderGfWhy(r){
 }
 const stopStr = s => s.noDeco ? "No stops required" : s.stops.map(x=>`${x.d}′ ${x.t}${x.sw?` (${gasName(x.g)})`:""}${x.breaks?` incl. ${x.breaks} break${x.breaks>1?"s":""}`:""}`).join(" · ");
 
-const PLAN_UNLOCK={dbl:6, rule:6, deco:7, trv:7, oh:8, st:9, tmx:10};   // rule: a turn pressure (halves/thirds); direct-ascent instars ascend at rock bottom
+const PLAN_UNLOCK={dbl:6, rule:6, deco:7, trv:7, tmx:7, oh:8, st:9, hyp:10};   // tmx: normoxic trimix (O₂ 18%+); hyp: hypoxic mixes   // rule: a turn pressure (halves/thirds); direct-ascent instars ascend at rock bottom
 const canPlan=(k,P)=>(+((P||PL()).stage)||1)>=PLAN_UNLOCK[k];
 function repDefaultDive(){ return {depth:60,bt:40,o2:21,he:0,profile:"square",avg:"",levels:[],si:60}; }
 function renderRepBox(){
@@ -2110,6 +2112,7 @@ function renderFixes(r,det){
   const P=PL(), full=det.lvl>=3, show=(id,on)=>{ const el=$(id); if(el) el.style.display=on?"":"none"; };
   const limFail = r.D>r.mod || r.rho>r.densLim || r.endFt>(num(P.endLim)||100);
   show("#pFixTmx", P.adv.tmx || (canPlan("tmx",P) && (full || limFail)));
+  { const hn=$("#pTmxHint"); if(hn) hn.textContent = canPlan("hyp",P) ? "Fixes narcosis and density at depth" : "Normoxic trimix (O₂ 18% or more) fixes narcosis and density past ~100 ft; hypoxic mixes at Instar 10"; }
   const ndlOver = r.ndl!=null && r.ndl!==Infinity && r.btUse>r.ndl;
   show("#pFixDeco", P.adv.ds || P.adv.dg || (canPlan("deco",P) && (full || ndlOver)));
   { const req = P.adv.ds && r.ndlBase!=null && r.ndlBase!==Infinity && r.btUse>r.ndlBase, c=$('#pFixDeco [data-adv="ds"]');
@@ -2543,6 +2546,7 @@ $("#v-plan").addEventListener("input", e=>{
       P.rep.dives.push({depth:num(l.maxD),bt:num(l.time),o2:num(l.o2)||21,he:0,profile:num(l.avgD)>0?"avg":"square",avg:num(l.avgD)||"",levels:[],si:60}); save(); renderPlan(); } return; }
   if(t.dataset.dg){ const [i,f]=t.dataset.dg.split("."); P.dg[+i][f] = f==="tank"?t.value:(t.value===""?"":+t.value); save(); renderPlanOut(); return; }
   if(t.dataset.k!==undefined){ const k=t.dataset.k; P[k] = (t.type==="number"||["water","po2","dens","arate","stress","ptime","ss","cCount","lastStop","desc","dgRes"].includes(k)) ? (t.value===""?"":+t.value) : t.value;
+    if(k==="o2" && !canPlan("hyp",P) && num(P.o2)>0 && num(P.o2)<18){ P.o2=18; t.value=18; }
     if(k==="o2") document.querySelectorAll('#v-plan [data-k="o2"]').forEach(el=>{ if(el!==t) el.value=P.o2; });
     if(k==="temp"){ (P.gff ??= {}).cold = coldAuto(P); syncCold(); }
     save(); if(["light","stage","gfMode","mixStd","venue"].includes(k)) { renderPlan(); } else renderPlanOut(); return; }
