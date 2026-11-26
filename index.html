@@ -530,7 +530,7 @@ const ARATE_OPTS = [10, 20, 30];
 
 // Version: MAJOR.MINOR.PATCH — major = new capability or a change to how plans or progress work;
 // minor = refinements and added content; patch = fixes only (omitted when 0). Keep sw.js VERSION in step.
-const APP_VERSION = "9.1";
+const APP_VERSION = "10.0";
 { const v=document.getElementById("appVer"); if(v) v.textContent=APP_VERSION; }
 const PRINCIPLES = ["Plan the dive","Conserve energy","Use safety equipment","Manage decompression","Maintain situational awareness","Maintain team integrity"];
 
@@ -1556,11 +1556,11 @@ function gfSelect(P){
   const factors=[...auto,...manual];
   const mode=P.gfMode||"suggest";
   let lo,hi,why;
-  if(mode==="conservative"){ lo=30; hi=70; why="Conservative program standard often required by institutional decompression programs. The most conservative preset here: deeper first stop and the longest shallow stops."; }
+  if(mode==="conservative"){ lo=30; hi=70; why="Required by some institutional decompression programs. GF low 30 adds deep-stop time and GF high 70 lengthens the shallow stops, so it gives the longest schedules here — but comparative studies have not shown deep-stop weighting to be safer, and a military analysis of air diving found no evidence that 30/70 is safer than shallow-weighted settings. Use it when a program requires it"; }
   else if(mode==="shallow"){ lo=50; hi=80; why="Controlled trials of air decompression found that moving stop time from shallow to deep stops, with total time unchanged, increased DCS. A GF low of 50 avoids adding deep-stop time; GF high 80 keeps a surfacing margin below the raw Bühlmann limit."; }
   else if(mode==="custom"){ lo=Math.min(100,Math.max(10,num(P.gfLo)||50)); hi=Math.min(100,Math.max(lo,num(P.gfHi)||80)); why="Custom values. GF low sets how deep the first stop is (lower = deeper); GF high sets the surfacing margin (lower = longer shallow stops)."; }
-  else { lo=50; hi=Math.max(70,85-5*factors.length);
-    why=`Team standard 50/85, used for no-stop and decompression dives alike so every schedule can be reproduced in any planner. GF low 50 keeps stops shallow-weighted (controlled trials of air decompression found that moving stop time deeper increased DCS). GF high drops by 5 for each risk factor present, to a floor of 70${factors.length?"":" — none present"}; it's the lever because it lengthens the shallow stops, where off-gassing is most efficient.`; }
+  else { hi=Math.max(70,85-5*factors.length); lo=Math.max(60,Math.round(0.83*hi/5)*5);
+    why=`Team standard 70/85, used for no-stop and decompression dives alike so every schedule can be reproduced in any planner. Each risk factor lowers GF high by 5 (floor 70) and GF low follows at about 83% of GF high (floor 60): 70/85 → 65/80 → 60/75 → 60/70${factors.length?"":" — none present"}. Comparative trials since about 2005 found deep-stop schedules no safer and sometimes worse (a U.S. Navy air trial: 3 DCS in 192 dives with a 40 ft first stop vs 11 in 198 with a 70 ft first stop), and GF low above 55 keeps the first stop in the range of validated shallow-stop schedules. GF high is the lever for extra margin because it lengthens the shallow stops, where off-gassing is most efficient.`; }
   // One fixed pair for the whole dive (no-stop limit, stops, contingencies, earlier dives): ns === hi
   const ns = hi;
   return {lo,hi,ns,why,factors,auto,mode};
@@ -2021,8 +2021,8 @@ function renderAdvStatic(){
     <div class="grid" style="margin-top:8px">
       <div><label>Gradient factors</label><select data-k="gfMode">
         <option value="suggest" ${gf.mode==="suggest"?"selected":""}>Recommended from risk factors</option>
-        <option value="shallow" ${gf.mode==="shallow"?"selected":""}>50/80 — shallow-weighted</option>
-        <option value="conservative" ${gf.mode==="conservative"?"selected":""}>30/70 — conservative program standard</option>
+        <option value="shallow" ${gf.mode==="shallow"?"selected":""}>50/80 — common default</option>
+        <option value="conservative" ${gf.mode==="conservative"?"selected":""}>30/70 — required by some programs (deep-stop weighted)</option>
         <option value="custom" ${gf.mode==="custom"?"selected":""}>Custom</option></select></div>
       ${gf.mode==="custom"?`<div><label>GF low</label><input type="number" data-k="gfLo" value="${P.gfLo}"></div><div><label>GF high</label><input type="number" data-k="gfHi" value="${P.gfHi}"></div>`:""}
     </div>

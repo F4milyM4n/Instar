@@ -46,6 +46,14 @@ Instar uses **MAJOR.MINOR.PATCH** numbers, shown in the app's footer:
 
 The number lives in one place in `index.html` (`APP_VERSION`); `sw.js` uses the same number for its cache name so installed apps update.
 
+## What's new in 10.0
+
+**Team standard 70/85, shallow-weighted**
+- The suggested gradient factors move from 50/85 to **70/85**, still one fixed pair for the whole dive. Each risk factor lowers GF high by 5 (floor 70) and GF low follows at about 83% of GF high (floor 60): no factors 70/85, one 65/80, two 60/75, three or more 60/70.
+- Why: comparative decompression trials since about 2005 found deep-stop schedules no safer and sometimes worse — a U.S. Navy air trial (30 min at 170 ft) had 3 DCS in 192 dives with a 40 ft first stop vs 11 in 198 with a 70 ft first stop; French Navy and trimix bubble studies point the same way. A 2018 validation found GF low above 55 keeps the first stop within the range of the validated shallow-stop schedule, and a 2023 military analysis of air diving found no evidence that 30/70 is safer. GF low at about 83% of GF high follows the approach described in "Gradient Factors in a Post-Deep-Stops World" (InDEPTH).
+- No-stop limits are unchanged from 9.x (GF low doesn't affect them). Decompression schedules change little — e.g. 170 ft on air for 30 min: 121 min of stops at 70/85 vs 124 at 50/85.
+- The 30/70 preset is relabelled "required by some programs (deep-stop weighted)", and 50/80 "common default".
+
 ## What's new in 9.1
 
 **Altitude**
