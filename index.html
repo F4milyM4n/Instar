@@ -194,6 +194,9 @@ table.run td{vertical-align:top}
     <h2>Environment</h2>
     <div class="grid">
       <div><label>Water</label><select data-k="water"><option value="33">Salt (33 ft/atm)</option><option value="34">Fresh (34 ft/atm)</option></select></div>
+      <div><label>Altitude (ft above sea level)</label><input type="number" step="100" min="0" data-k="alt" placeholder="0"></div>
+      <div><label>Hours at altitude before the dive</label><input type="number" step="1" min="0" data-k="altHrs" placeholder="a day or more"></div>
+      <div id="pAltNote" class="muted" style="grid-column:1/-1;font-size:12px"></div>
       <div><label>Water temp (°F)</label><input type="number" data-k="temp"></div>
       <div><label>Visibility (ft)</label><input type="number" data-k="vis"></div>
       <div><label>Current</label><select data-k="current"><option>None</option><option>Light</option><option>Moderate</option><option>Strong</option></select></div>
@@ -527,7 +530,7 @@ const ARATE_OPTS = [10, 20, 30];
 
 // Version: MAJOR.MINOR.PATCH — major = new capability or a change to how plans or progress work;
 // minor = refinements and added content; patch = fixes only (omitted when 0). Keep sw.js VERSION in step.
-const APP_VERSION = "8.1";
+const APP_VERSION = "9.1";
 { const v=document.getElementById("appVer"); if(v) v.textContent=APP_VERSION; }
 const PRINCIPLES = ["Plan the dive","Conserve energy","Use safety equipment","Manage decompression","Maintain situational awareness","Maintain team integrity"];
 
@@ -1344,8 +1347,21 @@ const ZHL = {
   heb:[0.477,0.5747,0.6527,0.7223,0.7582,0.7957,0.8279,0.8553,0.8757,0.8903,0.8997,0.9073,0.9122,0.9171,0.9217,0.9267]
 };
 const PWV=0.0627, SURF=1.01325;
-const pAmb=(ft,W)=>SURF*(ft/W+1);
-const tissInit=()=>({n:Array(16).fill((SURF-PWV)*0.7902), h:Array(16).fill(0)});
+// Dive site: surface pressure at altitude, and the tissues the diver starts with (equilibrated there, or still carrying
+// sea-level nitrogen if they arrived recently). Water adds SURF bar per W ft regardless of altitude.
+const SITE={p:SURF, T0:null, alt:0};
+const pAmb=(ft,W)=>SITE.p + SURF*ft/W;
+const tissBase=p=>({n:Array(16).fill((p-PWV)*0.7902), h:Array(16).fill(0)});
+const tissInit=()=> SITE.T0 ? {n:SITE.T0.n.slice(), h:SITE.T0.h.slice()} : tissBase(SITE.p);
+function setSite(altFt,hours){
+  const a=Math.max(0,num(altFt)||0), p=a>0 ? SURF*Math.pow(1-6.8754e-6*a,5.2559) : SURF;
+  if(SITE.alt===a && SITE.hrs===hours) return;
+  SITE.alt=a; SITE.hrs=hours; SITE.p=p; SITE.T0=null;
+  const h=num(hours);
+  if(a>0 && hours!=="" && hours!=null && h<48){        // arrived recently: start from sea level, off-gas on air at the site
+    const T=tissBase(SURF); tissSeg(T,0,0,Math.max(0,h)*60,{o2:0.21,he:0},33); SITE.T0=T;
+  }
+}
 const tissClone=T=>({n:T.n.slice(), h:T.h.slice()});
 function schreiner(p,P0,R,t,f,ht){ const k=Math.LN2/ht, Pi0=(P0-PWV)*f, Ri=R*f; return Pi0 + Ri*(t-1/k) - (Pi0 - p - Ri/k)*Math.exp(-k*t); }
 function tissSeg(T,d0,d1,t,g,W){
@@ -1357,7 +1373,7 @@ function ceilFt(T,gf,W){
   for(let i=0;i<16;i++){ const pn=T.n[i], ph=T.h[i], pt=pn+ph; if(pt<=0) continue;
     const a=(ZHL.n2a[i]*pn+ZHL.hea[i]*ph)/pt, b=(ZHL.n2b[i]*pn+ZHL.heb[i]*ph)/pt;
     m=Math.max(m,(pt-a*gf)/(gf/b+1-gf)); }
-  return (m/SURF-1)*W;
+  return (m-SITE.p)/SURF*W;
 }
 // Single-exposure CNS limits (min) by pO2
 const CNS_TBL=[[0.6,720],[0.7,570],[0.8,450],[0.9,360],[1.0,300],[1.1,240],[1.2,210],[1.3,180],[1.4,150],[1.5,120],[1.6,45]];
@@ -1521,7 +1537,8 @@ function tankOf(id){
 function diverName(id){ return (S.divers.find(d=>d.id===id)||{name:"?"}).name; }
 
 /* ---- Gradient factor selection ---- */
-const GF_FACTORS_MANUAL = {cold:"Cold water, or expect to get cold", work:"Heavy workload planned", fly:"Flying or driving to altitude after", unwell:"Fatigued, dehydrated or unwell"};
+const GF_FACTORS_MANUAL = {cold:"Cold water, or expect to get cold", work:"Heavy workload planned", fly:"Flying or driving to altitude after", unwell:"Fatigued, dehydrated or unwell",
+  pfo:"Known PFO or a previous DCS hit", multiday:"Third or later consecutive day of diving", after:"Heavy exercise or heat after the dive (hard work, hot shower, sauna, hot tub)", earlier:"Fast ascent, missed stop or yo-yo profile on an earlier dive"};
 // Cold is a box the diver owns. Entering a water temperature or changing an exposure suit sets it:
 // below 60°F, or (with no temperature) a heavy drysuit undergarment or a semi-dry. A drysuit alone doesn't imply cold.
 function syncCold(){ document.querySelectorAll('#v-plan [data-gff="cold"]').forEach(c=>c.checked=gffOn(PL(),"cold")); }
@@ -1542,12 +1559,10 @@ function gfSelect(P){
   if(mode==="conservative"){ lo=30; hi=70; why="Conservative program standard often required by institutional decompression programs. The most conservative preset here: deeper first stop and the longest shallow stops."; }
   else if(mode==="shallow"){ lo=50; hi=80; why="Controlled trials of air decompression found that moving stop time from shallow to deep stops, with total time unchanged, increased DCS. A GF low of 50 avoids adding deep-stop time; GF high 80 keeps a surfacing margin below the raw Bühlmann limit."; }
   else if(mode==="custom"){ lo=Math.min(100,Math.max(10,num(P.gfLo)||50)); hi=Math.min(100,Math.max(lo,num(P.gfHi)||80)); why="Custom values. GF low sets how deep the first stop is (lower = deeper); GF high sets the surfacing margin (lower = longer shallow stops)."; }
-  else { lo=50; hi=Math.max(65,80-5*factors.length);
-    why=`Starts from 50/80 (shallow-weighted, per deep-stop trial findings) and lowers GF high by 5 for each risk factor present (floor 65)${factors.length?"":" — none present"}. GF high is the lever because it lengthens the shallow stops, where the trial data favor spending extra time. The 5-point step is a planning convention, not a validated dose-response. No-stop dives use GF high 90 (less 5 per risk factor, floor 70): with no stops only GF high matters, a direct ascent is available, and the safety stop adds margin the limit doesn\'t count. Once stops are owed, GF high slides from the no-stop value to the decompression value, reaching it at 20 min of stops, so the margin grows with the obligation instead of jumping.`; }
-  // No-stop dives: only GF high matters (no stops to place). Suggested mode uses 90, less 5 per risk factor (floor 70);
-  // a preset or custom choice applies to no-stop dives too.
-  // "new to planned deco" only lowers the decompression end, so turning decompression on doesn't shorten the no-stop limit
-  const ns = mode==="suggest" ? Math.max(70, 90-5*(factors.length-(newDeco?1:0))) : hi;
+  else { lo=50; hi=Math.max(70,85-5*factors.length);
+    why=`Team standard 50/85, used for no-stop and decompression dives alike so every schedule can be reproduced in any planner. GF low 50 keeps stops shallow-weighted (controlled trials of air decompression found that moving stop time deeper increased DCS). GF high drops by 5 for each risk factor present, to a floor of 70${factors.length?"":" — none present"}; it's the lever because it lengthens the shallow stops, where off-gassing is most efficient.`; }
+  // One fixed pair for the whole dive (no-stop limit, stops, contingencies, earlier dives): ns === hi
+  const ns = hi;
   return {lo,hi,ns,why,factors,auto,mode};
 }
 
@@ -1565,6 +1580,7 @@ function planCalc(){
 }
 function planCore(ov){
   const P=PL(), D=num(P.depth)||0, W=num(P.water)||33;
+  setSite(P.alt, P.altHrs??"");
   const OH = P.venue==="overhead" && canPlan("oh",P);
   const btUse = ov && ov.bt>0 ? ov.bt : num(P.bt);            // overhead: total time from the surface to leaving the overhead
   const flow = OH ? Math.max(0.5,num(P.flow)||1) : 1;           // exit time ÷ entry time
@@ -1846,7 +1862,7 @@ function planCore(ov){
   const tblNdl = ndlRow ? ndlRow[1] : null;
   const ndlBase = mNDL;
   // the same limit without today's risk factors, to show what they cost
-  const ndlPlain = gf.factors.length && gf.mode==="suggest" && !(ov&&ov.quick) ? (()=>{ return modelNDL(D,bottom,0.90,W,asc,desc,T0); })() : null;
+  const ndlPlain = gf.factors.length && gf.mode==="suggest" && !(ov&&ov.quick) ? (()=>{ return modelNDL(D,bottom,0.85,W,asc,desc,T0); })() : null;
   const ndl = P.adv?.ds ? null : ndlBase;
   const limits = OH ? [["Gas in and out",btUse||Infinity]] : [[P.rule==="all"?"Gas to rock bottom":"Gas to turn",gasMin],["Planned",btUse||Infinity]]; if(ndl!=null) limits.push(["NDL",ndl]);
   const lim = limits.reduce((a,b)=>b[1]<a[1]?b:a);
@@ -2121,6 +2137,8 @@ function renderFixes(r,det){
   { const v=$('#v-plan [data-k="venue"] option[value="overhead"]'); if(v) v.disabled = !canPlan("oh",P) && P.venue!=="overhead"; }
   let n=0; document.querySelectorAll("#v-plan h2[data-sec]").forEach(el=>{ const card=el.closest(".card"); if(card.style.display==="none") return; el.innerHTML=`${++n} · ${el.dataset.sec}`; });
   $("#pBtLbl").textContent = r.OH ? "Max time to turn (min, optional)" : "Planned bottom time (min)";
+  { const el=$("#pAltNote"); if(el){ const a=num(P.alt)||0, W=num(P.water)||33;
+      el.innerHTML = a>0 ? `At ${f0(a)} ft the surface pressure is ${(SITE.p/SURF).toFixed(2)} atm, so no-stop limits shorten and stops deepen; the model plans for it. Plan with actual depths: a depth gauge fixed to sea-level pressure reads about ${Math.round((1-SITE.p/SURF)*W)} ft shallow here — add that to its reading.${num(P.altHrs)>0||P.altHrs===0?` Tissues still carry sea-level nitrogen after ${P.altHrs} h at altitude; the plan includes it.`:" Assumes you've been at altitude a day or more — enter hours if you arrived recently."}` : ""; } }
   const nl=$("#pNdlLine");
   if(nl) nl.innerHTML = P.adv.ds ? `Planned decompression — the schedule below sets ascent and stop gas.`
     : r.ndl==null||r.ndl===Infinity ? `No no-deco limit at this depth.`
@@ -2152,8 +2170,8 @@ function renderPlanOut(){
   $("#pO2Lbl").textContent = det.lvl===1 ? `${gname} · max depth ${maxD} ft (${byDens?"gas density":"pO₂"}) · pO₂ MOD ${Math.floor(r.mod)} · density ${Math.floor(r.densMax)}` : `${gname} · MOD ${Math.floor(r.mod)} ft @ ${(+P.po2).toFixed(1)} · ${r.rho.toFixed(1)} g/L at ${r.D} ft`;
   const mTxt = r.mNDL===Infinity?"no limit":`${r.mNDL} min`;
   const ndlCard = P.adv.ds
-    ? `<div class="big"><div class="k">Decompression</div><div class="v">${r.sched&&!r.sched.error?(r.sched.noDeco?"None":`${r.sched.decoT} <small>min stops</small>`):"—"}</div><div class="s">No-stop limit ${mTxt} at GF ${r.gf.ns} · stops at GF ${r.gf.lo}/${r.sched&&!r.sched.error?r.sched.gfHiUsed:r.gf.hi}</div></div>`
-    : `<div class="big"><div class="k">No-deco limit</div><div class="v">${r.ndl===Infinity?"No limit":`${r.ndl} min`}</div><div class="s">Model, GF high ${r.gf.ns}${r.gf.factors.length&&r.gf.mode==="suggest"?` (90 less ${r.gf.factors.length} risk factor${r.gf.factors.length>1?"s":""})`:""}${r.repOn?" · includes earlier dives":""}</div></div>`;
+    ? `<div class="big"><div class="k">Decompression</div><div class="v">${r.sched&&!r.sched.error?(r.sched.noDeco?"None":`${r.sched.decoT} <small>min stops</small>`):"—"}</div><div class="s">No-stop limit ${mTxt} · stops at GF ${r.gf.lo}/${r.gf.hi}</div></div>`
+    : `<div class="big"><div class="k">No-deco limit</div><div class="v">${r.ndl===Infinity?"No limit":`${r.ndl} min`}</div><div class="s">Model, GF high ${r.gf.hi}${r.gf.factors.length&&r.gf.mode==="suggest"?` (85 less ${r.gf.factors.length} risk factor${r.gf.factors.length>1?"s":""})`:""}${r.repOn?" · includes earlier dives":""}</div></div>`;
   $("#pProfile").innerHTML = ndlCard + `
     <div class="big" data-lvl="2"><div class="k">Gas: ${gname}</div><div class="v" style="color:${r.D>r.mod?"var(--warn)":"inherit"}">${r.po2.toFixed(2)} <small>pO₂</small></div><div class="s">MOD at ${(+P.po2).toFixed(1)}: ${Math.floor(r.mod)} ft${r.fo2<0.18?` · <span style="color:var(--bad)">min depth ${Math.ceil(r.minOD)} ft (hypoxic)</span>`:""}</div></div>
     <div class="big" data-lvl="2"><div class="k">Gas density</div><div class="v" style="color:${r.rho>r.densLim?"var(--warn)":"inherit"}">${r.rho.toFixed(2)} <small>g/L at ${r.D} ft</small></div><div class="s">Max depth at ${r.densLim} g/L: ${Math.floor(r.densMax)} ft${r.densLim<6.2?` · at 6.2: ${Math.floor(r.densHardMax)} ft`:""}</div></div>
@@ -2372,6 +2390,7 @@ function briefText(r){
   if(P.entry) L.push(`Entry/exit: ${P.entry}`);
   if(P.route) L.push(`Route/hazards: ${P.route}`);
   const lvlB=+($("#v-plan").dataset.detail||3);
+  if(num(P.alt)>0) L.push(`Altitude: ${f0(num(P.alt))} ft (surface ${(SITE.p/SURF).toFixed(2)} atm)${P.altHrs!==""&&P.altHrs!=null?` · ${P.altHrs} h at altitude before the dive`:""} — actual depths; sea-level gauges read ${Math.round((1-SITE.p/SURF)*(num(P.water)||33))} ft shallow`);
   if(lvlB===1) L.push(`Profile: max ${r.D} ft · ${P.bt} min · ${gname} · no-deco limit ${r.ndl===Infinity||r.ndl==null?"none":Math.floor(r.ndl)+" min"}`, `Ascent ${P.arate} ft/min · Stop: ${P.stop}`);
   else L.push(`Profile: max ${r.D} ft, ${r.OH&&r.oh?`overhead — turn at ${Math.floor(r.D/r.desc+r.oh.inMin)} min (${r.oh.limitedBy}), out by ${Math.floor(r.oh.btEff)} min`:`bottom time ${P.bt} min`}, ${gname} (${lvlB>=2?`pO₂ ${r.po2.toFixed(2)}, `:""}max depth ${Math.floor(Math.min(r.mod,r.densMax))} ft — MOD ${Math.floor(r.mod)}, density ${Math.floor(r.densMax)}${r.fhe>0?`, END ${Math.round(r.endFt)} ft`:""})`);
   const lvl=+($("#v-plan").dataset.detail||3);

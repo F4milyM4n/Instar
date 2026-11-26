@@ -46,6 +46,24 @@ Instar uses **MAJOR.MINOR.PATCH** numbers, shown in the app's footer:
 
 The number lives in one place in `index.html` (`APP_VERSION`); `sw.js` uses the same number for its cache name so installed apps update.
 
+## What's new in 9.1
+
+**Altitude**
+- Environment has **Altitude (ft above sea level)** and **Hours at altitude before the dive**. The decompression model uses the site's surface pressure (standard atmosphere), so no-stop limits shorten and stops deepen as altitude rises — e.g. 60 ft in fresh water at 50/85: 52 min at sea level, 50 at 1,000 ft, 47 at 3,000, 43 at 6,000, 41 at 8,000.
+- If you arrived recently, enter the hours: the model starts from sea-level tissue loading and off-gasses it at the site before the dive. Left blank, it assumes a day or more at altitude.
+- Altitude is a correction to the model, not a gradient-factor risk factor, so it isn't counted twice.
+- Plan with actual depths. The app shows how far a depth gauge fixed to sea-level pressure reads shallow at the site (about 7 ft at 6,000 ft in fresh water), and the brief adds an altitude line.
+- Gas consumption, pO₂ and MOD still use sea-level surface pressure, which slightly overstates them at altitude (the conservative side).
+
+## What's new in 9.0
+
+**One team standard: GF 50/85 for every dive**
+- The suggested gradient factors are now a fixed 50/85, used for no-stop limits, decompression stops, contingencies and earlier dives alike, so any schedule the app prints can be reproduced in any standard planner. This replaces 8.x's no-stop GF high of 90 and the slide toward the decompression value.
+- Each risk factor lowers GF high by 5, to a floor of 70. GF low stays 50 (shallow-weighted).
+- New risk-factor boxes: known PFO or a previous DCS hit; third or later consecutive day of diving; heavy exercise or heat after the dive; a fast ascent, missed stop or yo-yo profile on an earlier dive.
+- Air no-stop limits at 50/85 with no risk factors: 50 ft 70 min, 60 ft 48, 70 ft 35, 80 ft 26, 100 ft 17.
+- The presets (50/80, 30/70) and custom values are unchanged.
+
 ## What's new in 8.1
 
 - **Add a deco gas prompt.** When a plan owes 20 min or more of stops on back gas, an amber alert suggests a deco gas (or a deeper switch).
